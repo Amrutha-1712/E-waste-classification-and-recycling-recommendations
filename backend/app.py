@@ -30,7 +30,7 @@ def login_page():
 
 @app.route('/home')
 def home_page():
-    return render_template('home.html')
+    return render_template('index.html')
 
 # API Logic: Account Registration
 @app.route('/api/register', methods=['POST'])
