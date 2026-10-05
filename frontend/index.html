@@ -1,0 +1,1381 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <meta name="description"
+          content="EcoSort - E-Waste Classification and Recycling Recommendation System">
+
+    <title>EcoSort | E-Waste Classification</title>
+
+    <style>
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            scroll-behavior: smooth;
+        }
+
+        :root {
+            --bg: #03100a;
+            --bg2: #06170e;
+            --card: rgba(10, 31, 20, 0.72);
+            --green: #63f59b;
+            --green2: #2bc96b;
+            --text: #f1fff6;
+            --muted: #8da99a;
+            --border: rgba(99, 245, 155, 0.18);
+        }
+
+        body {
+            font-family: Arial, Helvetica, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            overflow-x: hidden;
+        }
+
+        a {
+            color: inherit;
+            text-decoration: none;
+        }
+
+        /* ================= BACKGROUND ================= */
+
+        .background {
+            position: fixed;
+            inset: 0;
+            z-index: -10;
+            overflow: hidden;
+            background:
+                radial-gradient(circle at 80% 20%, rgba(50, 255, 130, 0.10), transparent 30%),
+                radial-gradient(circle at 10% 80%, rgba(50, 255, 130, 0.08), transparent 30%),
+                var(--bg);
+        }
+
+        .grid {
+            position: absolute;
+            inset: -100px;
+            background-image:
+                linear-gradient(rgba(99,245,155,.035) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(99,245,155,.035) 1px, transparent 1px);
+            background-size: 55px 55px;
+            animation: gridMove 18s linear infinite;
+        }
+
+        @keyframes gridMove {
+            to {
+                transform: translate(55px,55px);
+            }
+        }
+
+        .glow {
+            position: absolute;
+            width: 450px;
+            height: 450px;
+            border-radius: 50%;
+            background: rgba(50,255,130,.08);
+            filter: blur(110px);
+        }
+
+        .glow.one {
+            top: -200px;
+            right: -120px;
+            animation: glowMove 9s ease-in-out infinite alternate;
+        }
+
+        .glow.two {
+            bottom: -220px;
+            left: -150px;
+            animation: glowMove2 11s ease-in-out infinite alternate;
+        }
+
+        @keyframes glowMove {
+            to {
+                transform: translate(-130px,140px) scale(1.2);
+            }
+        }
+
+        @keyframes glowMove2 {
+            to {
+                transform: translate(150px,-100px) scale(1.2);
+            }
+        }
+
+        /* Floating e-waste particles */
+
+        .particle {
+            position: absolute;
+            width: 7px;
+            height: 7px;
+            border: 1px solid rgba(99,245,155,.5);
+            transform: rotate(45deg);
+            animation: floatParticle 12s linear infinite;
+        }
+
+        .p1 { left: 8%; bottom: -20px; animation-delay: -2s; }
+        .p2 { left: 22%; bottom: -20px; animation-delay: -7s; }
+        .p3 { left: 41%; bottom: -20px; animation-delay: -4s; }
+        .p4 { left: 63%; bottom: -20px; animation-delay: -9s; }
+        .p5 { left: 82%; bottom: -20px; animation-delay: -5s; }
+
+        @keyframes floatParticle {
+            0% {
+                opacity: 0;
+                transform: translateY(0) rotate(45deg);
+            }
+
+            15% {
+                opacity: .5;
+            }
+
+            100% {
+                opacity: 0;
+                transform: translateY(-110vh) rotate(405deg);
+            }
+        }
+
+        /* ================= NAVBAR ================= */
+
+        nav {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 90%;
+            max-width: 1200px;
+            padding: 14px 22px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(4,18,11,.78);
+            backdrop-filter: blur(18px);
+            border: 1px solid var(--border);
+            border-radius: 50px;
+            z-index: 1000;
+            box-shadow: 0 15px 50px rgba(0,0,0,.25);
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 24px;
+            font-weight: 800;
+        }
+
+        .logo-icon {
+            width: 38px;
+            height: 38px;
+            border: 1px solid var(--green);
+            border-radius: 50%;
+            display: grid;
+            place-items: center;
+            color: var(--green);
+            animation: rotateLogo 7s linear infinite;
+        }
+
+        @keyframes rotateLogo {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        .logo span {
+            color: var(--green);
+        }
+
+        .nav-links {
+            display: flex;
+            align-items: center;
+            gap: 27px;
+        }
+
+        .nav-links a {
+            color: #a9bcb1;
+            font-size: 14px;
+            transition: .3s;
+        }
+
+        .nav-links a:hover {
+            color: var(--green);
+        }
+
+        .nav-classify {
+            padding: 10px 19px;
+            border-radius: 25px;
+            background: var(--green);
+            color: #031008 !important;
+            font-weight: 800;
+            transition: .3s;
+        }
+
+        .nav-classify:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 30px rgba(99,245,155,.3);
+        }
+
+        /* ================= HERO ================= */
+
+        .hero {
+            min-height: 100vh;
+            padding: 150px 8% 80px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 60px;
+        }
+
+        .hero-content {
+            width: 55%;
+        }
+
+        .tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 9px;
+            padding: 10px 16px;
+            border: 1px solid var(--border);
+            border-radius: 30px;
+            color: var(--green);
+            background: rgba(99,245,155,.05);
+            font-size: 11px;
+            letter-spacing: 2px;
+            font-weight: 700;
+            animation: fadeUp .8s ease;
+        }
+
+        .tag::before {
+            content: "";
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: var(--green);
+            box-shadow: 0 0 15px var(--green);
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            50% {
+                opacity: .3;
+                transform: scale(.6);
+            }
+        }
+
+        .hero h1 {
+            margin: 25px 0;
+            font-size: clamp(55px, 7vw, 90px);
+            line-height: .95;
+            letter-spacing: -5px;
+            animation: titleIn 1s ease;
+        }
+
+        .hero h1 span {
+            color: var(--green);
+            text-shadow: 0 0 35px rgba(99,245,155,.25);
+        }
+
+        @keyframes titleIn {
+            from {
+                opacity: 0;
+                transform: translateY(45px);
+                filter: blur(8px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+                filter: blur(0);
+            }
+        }
+
+        .hero-description {
+            max-width: 650px;
+            color: var(--muted);
+            font-size: 18px;
+            line-height: 1.75;
+            animation: fadeUp 1s ease .2s both;
+        }
+
+        @keyframes fadeUp {
+            from {
+                opacity: 0;
+                transform: translateY(25px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .hero-buttons {
+            margin-top: 35px;
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            animation: fadeUp 1s ease .4s both;
+        }
+
+        .btn {
+            padding: 15px 25px;
+            border-radius: 30px;
+            font-weight: 800;
+            transition: .35s;
+        }
+
+        .btn-primary {
+            background: var(--green);
+            color: #031008;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 40px rgba(99,245,155,.25);
+        }
+
+        .btn-secondary {
+            border: 1px solid #294638;
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            color: var(--green);
+            border-color: var(--green);
+            transform: translateY(-5px);
+        }
+
+        /* ================= HERO DEVICE ================= */
+
+        .hero-visual {
+            width: 43%;
+            min-height: 520px;
+            position: relative;
+            display: grid;
+            place-items: center;
+        }
+
+        .orbit {
+            position: absolute;
+            width: 430px;
+            height: 430px;
+            border: 1px solid rgba(99,245,155,.15);
+            border-radius: 50%;
+            animation: orbit 18s linear infinite;
+        }
+
+        .orbit.two {
+            width: 330px;
+            height: 330px;
+            border-style: dashed;
+            animation-direction: reverse;
+            animation-duration: 13s;
+        }
+
+        @keyframes orbit {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        .orbit-item {
+            position: absolute;
+            width: 42px;
+            height: 42px;
+            display: grid;
+            place-items: center;
+            border: 1px solid rgba(99,245,155,.3);
+            border-radius: 12px;
+            background: #07170e;
+            color: var(--green);
+            box-shadow: 0 0 25px rgba(99,245,155,.12);
+        }
+
+        .orbit-item.one {
+            top: 20px;
+            left: 75px;
+        }
+
+        .orbit-item.two {
+            right: 10px;
+            bottom: 100px;
+        }
+
+        .orbit-item.three {
+            left: 10px;
+            bottom: 70px;
+        }
+
+        /* Laptop */
+
+        .laptop {
+            position: relative;
+            width: 310px;
+            height: 210px;
+            border: 2px solid #466453;
+            border-radius: 16px;
+            background: linear-gradient(145deg,#193223,#061009);
+            box-shadow:
+                0 0 70px rgba(99,245,155,.16),
+                inset 0 0 35px rgba(99,245,155,.05);
+            animation: laptopFloat 4s ease-in-out infinite;
+            z-index: 5;
+        }
+
+        @keyframes laptopFloat {
+            50% {
+                transform: translateY(-18px) rotateX(-3deg);
+            }
+        }
+
+        .screen {
+            position: absolute;
+            inset: 18px;
+            border: 2px solid #527662;
+            border-radius: 9px;
+            overflow: hidden;
+            background:
+                linear-gradient(rgba(99,245,155,.04) 1px,transparent 1px),
+                linear-gradient(90deg,rgba(99,245,155,.04) 1px,transparent 1px),
+                #07150d;
+            background-size: 20px 20px;
+        }
+
+        .screen-content {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%,-50%);
+            width: 125px;
+            height: 70px;
+            border: 2px solid var(--green);
+            border-radius: 8px;
+            background: rgba(99,245,155,.07);
+            box-shadow: 0 0 25px rgba(99,245,155,.2);
+        }
+
+        .screen-content::before {
+            content: "E-WASTE";
+            position: absolute;
+            top: 18px;
+            width: 100%;
+            text-align: center;
+            color: var(--green);
+            font-size: 11px;
+            font-weight: bold;
+            letter-spacing: 2px;
+        }
+
+        .screen-content::after {
+            content: "CLASSIFY";
+            position: absolute;
+            bottom: 17px;
+            width: 100%;
+            text-align: center;
+            color: #9ab5a5;
+            font-size: 9px;
+            letter-spacing: 1px;
+        }
+
+        .scan-line {
+            position: absolute;
+            width: 100%;
+            height: 3px;
+            background: white;
+            box-shadow:
+                0 0 10px white,
+                0 0 25px var(--green),
+                0 0 45px var(--green);
+            animation: scan 2.5s ease-in-out infinite;
+        }
+
+        @keyframes scan {
+            0%,100% {
+                top: 8%;
+            }
+
+            50% {
+                top: 90%;
+            }
+        }
+
+        .laptop-base {
+            position: absolute;
+            bottom: -17px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 350px;
+            height: 18px;
+            border-radius: 0 0 18px 18px;
+            background: #263d30;
+        }
+
+        .laptop-base::after {
+            content: "";
+            position: absolute;
+            left: 50%;
+            bottom: -7px;
+            transform: translateX(-50%);
+            width: 70px;
+            height: 7px;
+            border-radius: 0 0 8px 8px;
+            background: var(--green);
+            box-shadow: 0 0 15px var(--green);
+        }
+
+        .status-card {
+            position: absolute;
+            padding: 12px 16px;
+            border: 1px solid var(--border);
+            border-radius: 13px;
+            background: rgba(4,18,11,.9);
+            backdrop-filter: blur(12px);
+            font-size: 12px;
+            z-index: 10;
+            animation: cardFloat 3s ease-in-out infinite;
+        }
+
+        .status-card strong {
+            display: block;
+            color: var(--green);
+            margin-bottom: 4px;
+        }
+
+        .status-card.one {
+            top: 70px;
+            right: -10px;
+        }
+
+        .status-card.two {
+            bottom: 70px;
+            left: -10px;
+            animation-delay: -1.5s;
+        }
+
+        @keyframes cardFloat {
+            50% {
+                transform: translateY(-13px);
+            }
+        }
+
+        /* ================= SECTION ================= */
+
+        section {
+            padding: 120px 8%;
+        }
+
+        .section-label {
+            color: var(--green);
+            font-size: 11px;
+            letter-spacing: 3px;
+            font-weight: 700;
+        }
+
+        .section-title {
+            margin: 15px 0;
+            font-size: clamp(38px,5vw,62px);
+            line-height: 1;
+        }
+
+        .section-description {
+            max-width: 700px;
+            color: var(--muted);
+            line-height: 1.8;
+        }
+
+        /* ================= WORKFLOW ================= */
+
+        .workflow-section {
+            background: rgba(5,20,12,.65);
+        }
+
+        .workflow {
+            margin-top: 65px;
+            display: grid;
+            grid-template-columns: 1fr 100px 1fr 100px 1fr;
+            align-items: start;
+        }
+
+        .step {
+            text-align: center;
+        }
+
+        .step-number {
+            width: 75px;
+            height: 75px;
+            margin: auto;
+            border: 1px solid var(--green);
+            border-radius: 50%;
+            display: grid;
+            place-items: center;
+            color: var(--green);
+            font-weight: 800;
+            background: #06140c;
+            box-shadow: 0 0 25px rgba(99,245,155,.08);
+            transition: .4s;
+        }
+
+        .step:hover .step-number {
+            transform: scale(1.1);
+            background: var(--green);
+            color: #031008;
+            box-shadow: 0 0 35px rgba(99,245,155,.3);
+        }
+
+        .step h3 {
+            margin: 22px 0 10px;
+        }
+
+        .step p {
+            color: #7f9889;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+
+        .connector {
+            height: 2px;
+            margin-top: 37px;
+            background: #1c3627;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .connector::after {
+            content: "";
+            position: absolute;
+            width: 40px;
+            height: 100%;
+            background: var(--green);
+            box-shadow: 0 0 15px var(--green);
+            animation: flow 1.6s linear infinite;
+        }
+
+        @keyframes flow {
+            from {
+                left: -40px;
+            }
+
+            to {
+                left: 100%;
+            }
+        }
+
+        /* ================= COMPONENTS ================= */
+
+        .component-grid {
+            margin-top: 60px;
+            display: grid;
+            grid-template-columns: repeat(4,1fr);
+            gap: 18px;
+        }
+
+        .component {
+            padding: 28px;
+            min-height: 190px;
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            background: linear-gradient(
+                145deg,
+                rgba(99,245,155,.06),
+                rgba(255,255,255,.01)
+            );
+            transition: .4s;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .component:hover {
+            transform: translateY(-9px);
+            border-color: rgba(99,245,155,.5);
+            box-shadow: 0 20px 45px rgba(0,0,0,.3);
+        }
+
+        .component-icon {
+            width: 50px;
+            height: 50px;
+            display: grid;
+            place-items: center;
+            border: 1px solid var(--border);
+            border-radius: 13px;
+            color: var(--green);
+            font-size: 23px;
+            margin-bottom: 20px;
+        }
+
+        .component h3 {
+            margin-bottom: 9px;
+        }
+
+        .component p {
+            color: #7f9889;
+            font-size: 13px;
+            line-height: 1.6;
+        }
+
+        /* ================= RECOMMENDATION ================= */
+
+        .recommendation {
+            background:
+                radial-gradient(
+                    circle at 80% 40%,
+                    rgba(99,245,155,.09),
+                    transparent 35%
+                ),
+                var(--bg2);
+        }
+
+        .recommendation-box {
+            margin-top: 55px;
+            padding: 55px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 50px;
+            border: 1px solid var(--border);
+            border-radius: 28px;
+            background: rgba(99,245,155,.04);
+        }
+
+        .recommendation-box h3 {
+            font-size: 38px;
+            margin-bottom: 17px;
+        }
+
+        .recommendation-box p {
+            max-width: 650px;
+            color: var(--muted);
+            line-height: 1.8;
+        }
+
+        .recycle {
+            min-width: 180px;
+            height: 180px;
+            border: 1px solid rgba(99,245,155,.25);
+            border-radius: 50%;
+            display: grid;
+            place-items: center;
+            color: var(--green);
+            font-size: 80px;
+            animation: recycleSpin 8s linear infinite;
+        }
+
+        @keyframes recycleSpin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        /* ================= CTA ================= */
+
+        .cta {
+            text-align: center;
+            padding: 150px 20px;
+        }
+
+        .cta h2 {
+            margin: 20px 0 25px;
+            font-size: clamp(45px,7vw,82px);
+            line-height: .95;
+        }
+
+        .cta h2 span {
+            color: var(--green);
+        }
+
+        .cta p {
+            color: var(--muted);
+            margin-bottom: 35px;
+        }
+
+        /* ================= FOOTER ================= */
+
+        footer {
+            padding: 30px 8%;
+            border-top: 1px solid #15291e;
+            display: flex;
+            justify-content: space-between;
+            color: #6e8277;
+            font-size: 13px;
+        }
+
+        /* ================= RESPONSIVE ================= */
+
+        @media(max-width:1050px) {
+
+            .component-grid {
+                grid-template-columns: repeat(2,1fr);
+            }
+
+        }
+
+        @media(max-width:900px) {
+
+            .hero {
+                flex-direction: column;
+                text-align: center;
+                padding-top: 160px;
+            }
+
+            .hero-content,
+            .hero-visual {
+                width: 100%;
+            }
+
+            .hero-description {
+                margin: auto;
+            }
+
+            .hero-buttons {
+                justify-content: center;
+            }
+
+            .workflow {
+                grid-template-columns: 1fr;
+                gap: 25px;
+            }
+
+            .connector {
+                width: 2px;
+                height: 45px;
+                margin: auto;
+            }
+
+            .connector::after {
+                width: 100%;
+                height: 18px;
+                animation: verticalFlow 1.5s linear infinite;
+            }
+
+            @keyframes verticalFlow {
+                from {
+                    top: -18px;
+                }
+
+                to {
+                    top: 100%;
+                }
+            }
+
+            .recommendation-box {
+                flex-direction: column;
+                text-align: center;
+            }
+
+        }
+
+        @media(max-width:700px) {
+
+            nav {
+                width: 94%;
+            }
+
+            .nav-links a:not(.nav-classify) {
+                display: none;
+            }
+
+            .component-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .hero h1 {
+                font-size: 55px;
+                letter-spacing: -3px;
+            }
+
+            .orbit {
+                width: 330px;
+                height: 330px;
+            }
+
+            .orbit.two {
+                width: 270px;
+                height: 270px;
+            }
+
+            .laptop {
+                width: 270px;
+                height: 190px;
+            }
+
+            .laptop-base {
+                width: 300px;
+            }
+
+            .status-card.one {
+                right: 0;
+            }
+
+            .status-card.two {
+                left: 0;
+            }
+
+            .recommendation-box {
+                padding: 35px 25px;
+            }
+
+            .recommendation-box h3 {
+                font-size: 30px;
+            }
+
+            footer {
+                flex-direction: column;
+                text-align: center;
+                gap: 10px;
+            }
+
+        }
+
+    </style>
+</head>
+
+<body>
+
+<!-- ================= BACKGROUND ================= -->
+
+<div class="background">
+    <div class="grid"></div>
+
+    <div class="glow one"></div>
+    <div class="glow two"></div>
+
+    <span class="particle p1"></span>
+    <span class="particle p2"></span>
+    <span class="particle p3"></span>
+    <span class="particle p4"></span>
+    <span class="particle p5"></span>
+</div>
+
+
+<!-- ================= NAVBAR ================= -->
+
+<nav>
+
+    <a href="#home" class="logo">
+        <div class="logo-icon">♻</div>
+        <div><span>Eco</span>Sort</div>
+    </a>
+
+    <div class="nav-links">
+
+        <a href="#home">Home</a>
+
+        <a href="#how">How It Works</a>
+
+        <a href="#components">Components</a>
+
+        <a href="#recommendation">Recommendation</a>
+
+        <a href="classify.html" class="nav-classify">
+            Classify →
+        </a>
+
+    </div>
+
+</nav>
+
+
+<!-- ================= HERO ================= -->
+
+<main>
+
+<section class="hero" id="home">
+
+    <div class="hero-content">
+
+        <div class="tag">
+            E-WASTE CLASSIFICATION SYSTEM
+        </div>
+
+        <h1>
+            Give Electronic<br>
+            Waste A<br>
+            <span>New Purpose.</span>
+        </h1>
+
+        <p class="hero-description">
+            EcoSort identifies electronic components from images
+            and provides suitable recycling and disposal guidance.
+            Turn unwanted electronic parts into responsible
+            recycling decisions.
+        </p>
+
+        <div class="hero-buttons">
+
+            <a href="classify.html" class="btn btn-primary">
+                Start Classification →
+            </a>
+
+            <a href="#how" class="btn btn-secondary">
+                Explore System
+            </a>
+
+        </div>
+
+    </div>
+
+
+    <!-- Animated project visual -->
+
+    <div class="hero-visual">
+
+        <div class="orbit">
+
+            <div class="orbit-item one">▣</div>
+
+            <div class="orbit-item two">▰</div>
+
+        </div>
+
+
+        <div class="orbit two">
+
+            <div class="orbit-item three">⌘</div>
+
+        </div>
+
+
+        <!-- Laptop -->
+
+        <div class="laptop">
+
+            <div class="screen">
+
+                <div class="screen-content"></div>
+
+                <div class="scan-line"></div>
+
+            </div>
+
+            <div class="laptop-base"></div>
+
+        </div>
+
+
+        <div class="status-card one">
+
+            <strong>Component Scan</strong>
+
+            Image analysis active
+
+        </div>
+
+
+        <div class="status-card two">
+
+            <strong>Recycle Route</strong>
+
+            Recommendation ready
+
+        </div>
+
+    </div>
+
+</section>
+
+
+<!-- ================= HOW IT WORKS ================= -->
+
+<section class="workflow-section" id="how">
+
+    <div class="section-label">
+        HOW IT WORKS
+    </div>
+
+    <h2 class="section-title">
+        From Image To<br>
+        Responsible Recycling.
+    </h2>
+
+    <p class="section-description">
+        EcoSort follows a simple process to identify an
+        electronic component and provide an appropriate
+        recycling recommendation.
+    </p>
+
+
+    <div class="workflow">
+
+        <div class="step">
+
+            <div class="step-number">
+                01
+            </div>
+
+            <h3>Upload</h3>
+
+            <p>
+                Upload a clear image of the
+                electronic component.
+            </p>
+
+        </div>
+
+
+        <div class="connector"></div>
+
+
+        <div class="step">
+
+            <div class="step-number">
+                02
+            </div>
+
+            <h3>Classify</h3>
+
+            <p>
+                The system identifies the
+                component category from the image.
+            </p>
+
+        </div>
+
+
+        <div class="connector"></div>
+
+
+        <div class="step">
+
+            <div class="step-number">
+                03
+            </div>
+
+            <h3>Recycle</h3>
+
+            <p>
+                Receive suitable handling,
+                recycling and disposal guidance.
+            </p>
+
+        </div>
+
+    </div>
+
+</section>
+
+
+<!-- ================= COMPONENTS ================= -->
+
+<section id="components">
+
+    <div class="section-label">
+        E-WASTE COMPONENTS
+    </div>
+
+    <h2 class="section-title">
+        What Can Be Classified?
+    </h2>
+
+    <p class="section-description">
+        EcoSort focuses on common electronic and laptop
+        components that require different recycling methods.
+    </p>
+
+
+    <div class="component-grid">
+
+        <div class="component">
+
+            <div class="component-icon">▣</div>
+
+            <h3>RAM</h3>
+
+            <p>
+                Memory modules containing electronic
+                components and recoverable materials.
+            </p>
+
+        </div>
+
+
+        <div class="component">
+
+            <div class="component-icon">▰</div>
+
+            <h3>Battery</h3>
+
+            <p>
+                Rechargeable battery units requiring
+                safe and specialized handling.
+            </p>
+
+        </div>
+
+
+        <div class="component">
+
+            <div class="component-icon">◈</div>
+
+            <h3>Storage Device</h3>
+
+            <p>
+                Hard drives and solid-state storage
+                components containing recoverable materials.
+            </p>
+
+        </div>
+
+
+        <div class="component">
+
+            <div class="component-icon">◉</div>
+
+            <h3>Cooling Fan</h3>
+
+            <p>
+                Cooling assemblies containing plastic,
+                metal and electronic parts.
+            </p>
+
+        </div>
+
+
+        <div class="component">
+
+            <div class="component-icon">▱</div>
+
+            <h3>Display</h3>
+
+            <p>
+                Laptop display panels requiring
+                careful collection and processing.
+            </p>
+
+        </div>
+
+
+        <div class="component">
+
+            <div class="component-icon">⌘</div>
+
+            <h3>Motherboard</h3>
+
+            <p>
+                Circuit boards containing valuable
+                electronic and recoverable materials.
+            </p>
+
+        </div>
+
+
+        <div class="component">
+
+            <div class="component-icon">⌨</div>
+
+            <h3>Keyboard</h3>
+
+            <p>
+                Mixed plastic and electronic components
+                from laptop keyboards.
+            </p>
+
+        </div>
+
+
+        <div class="component">
+
+            <div class="component-icon">＋</div>
+
+            <h3>Other Components</h3>
+
+            <p>
+                Additional electronic parts supported
+                by the classification system.
+            </p>
+
+        </div>
+
+    </div>
+
+</section>
+
+
+<!-- ================= RECOMMENDATION ================= -->
+
+<section class="recommendation" id="recommendation">
+
+    <div class="section-label">
+        RECYCLING RECOMMENDATION
+    </div>
+
+    <h2 class="section-title">
+        Know What To Do With It.
+    </h2>
+
+
+    <div class="recommendation-box">
+
+        <div>
+
+            <h3>
+                Identify.<br>
+                Understand.<br>
+                Recycle.
+            </h3>
+
+            <p>
+                After identifying the electronic component,
+                EcoSort provides relevant handling and
+                recycling guidance. This helps users make
+                safer and more responsible e-waste disposal
+                decisions.
+            </p>
+
+        </div>
+
+
+        <div class="recycle">
+            ♻
+        </div>
+
+    </div>
+
+</section>
+
+
+<!-- ================= CTA ================= -->
+
+<section class="cta">
+
+    <div class="section-label">
+        READY TO START?
+    </div>
+
+    <h2>
+        Turn E-Waste<br>
+        Into A <span>Better Choice.</span>
+    </h2>
+
+    <p>
+        Upload an electronic component image and
+        discover its recommended recycling path.
+    </p>
+
+    <a href="classify.html" class="btn btn-primary">
+        Start Classification →
+    </a>
+
+</section>
+
+</main>
+
+
+<!-- ================= FOOTER ================= -->
+
+<footer>
+
+    <div>
+        © 2026 EcoSort
+    </div>
+
+    <div>
+        E-Waste Classification & Recycling Recommendation
+    </div>
+
+</footer>
+
+
+</body>
+</html>
+```
