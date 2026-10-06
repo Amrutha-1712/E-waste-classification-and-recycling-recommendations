@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>E-Waste Recycling - Login</title>
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: Arial, sans-serif;
+        }
+
+        body {
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: linear-gradient(135deg, #dfffe8, #b7e4c7, #74c69d);
+        }
+
+        .container {
+            width: 900px;
+            max-width: 95%;
+            min-height: 520px;
+            display: flex;
+            background: white;
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+
+        /* Left side */
+        .left {
+            width: 50%;
+            background: linear-gradient(135deg, #1b5e20, #2e7d32);
+            color: white;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            padding: 40px;
+        }
+
+        .left .icon {
+            font-size: 75px;
+            margin-bottom: 20px;
+        }
+
+        .left h1 {
+            font-size: 32px;
+            margin-bottom: 15px;
+        }
+
+        .left p {
+            font-size: 16px;
+            line-height: 1.6;
+        }
+
+        .tagline {
+            margin-top: 25px;
+            font-size: 14px;
+            opacity: 0.9;
+        }
+
+        /* Right side */
+        .right {
+            width: 50%;
+            padding: 50px 45px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .right h2 {
+            color: #1b5e20;
+            font-size: 30px;
+            margin-bottom: 10px;
+        }
+
+        .welcome {
+            color: #666;
+            margin-bottom: 30px;
+        }
+
+        .input-box {
+            margin-bottom: 20px;
+        }
+
+        .input-box label {
+            display: block;
+            margin-bottom: 7px;
+            color: #333;
+            font-weight: bold;
+        }
+
+        .input-box input {
+            width: 100%;
+            padding: 13px;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            font-size: 15px;
+            outline: none;
+        }
+
+        .input-box input:focus {
+            border-color: #2e7d32;
+            box-shadow: 0 0 5px rgba(46,125,50,0.3);
+        }
+
+        .login-btn {
+            width: 100%;
+            padding: 14px;
+            border: none;
+            border-radius: 8px;
+            background: #2e7d32;
+            color: white;
+            font-size: 17px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+
+        .login-btn:hover {
+            background: #1b5e20;
+            transform: translateY(-2px);
+        }
+
+        .message {
+            margin-top: 15px;
+            text-align: center;
+            font-size: 14px;
+            font-weight: bold;
+        }
+
+        .register {
+            text-align: center;
+            margin-top: 25px;
+            color: #666;
+        }
+
+        .register a {
+            color: #2e7d32;
+            text-decoration: none;
+            font-weight: bold;
+        }
+
+        .register a:hover {
+            text-decoration: underline;
+        }
+
+        /* Mobile */
+        @media (max-width: 700px) {
+            .container {
+                flex-direction: column;
+            }
+
+            .left,
+            .right {
+                width: 100%;
+            }
+
+            .left {
+                padding: 30px;
+            }
+
+            .right {
+                padding: 35px 25px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="container">
+
+        <!-- LEFT SIDE -->
+        <div class="left">
+
+            <div class="icon">♻️</div>
+
+            <h1>E-Waste Care</h1>
+
+            <p>
+                E-Waste Classification &
+                Recycling Recommendation
+            </p>
+
+            <div class="tagline">
+                Classify • Reuse • Repair • Recycle
+            </div>
+
+        </div>
+
+
+        <!-- RIGHT SIDE -->
+        <div class="right">
+
+            <h2>Welcome Back!</h2>
+
+            <p class="welcome">
+                Login to continue to your e-waste dashboard.
+            </p>
+
+
+            <form id="loginForm">
+
+                <!-- Username / Email -->
+                <div class="input-box">
+                    <label for="username">Username or Email</label>
+
+                    <input
+                        type="text"
+                        id="username"
+                        placeholder="Enter your username or email"
+                        required
+                    >
+                </div>
+
+
+                <!-- Password -->
+                <div class="input-box">
+                    <label for="password">Password</label>
+
+                    <input
+                        type="password"
+                        id="password"
+                        placeholder="Enter your password"
+                        required
+                    >
+                </div>
+
+
+                <button type="submit" class="login-btn">
+                    Login
+                </button>
+
+            </form>
+
+
+            <div class="message" id="message"></div>
+
+
+            <div class="register">
+                Don't have an account?
+                <a href="register.html">Register Here</a>
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <script>
+
+        document.getElementById("loginForm").addEventListener("submit", function(event) {
+
+            event.preventDefault();
+
+            // Get entered values
+            const username = document.getElementById("username").value.trim();
+            const password = document.getElementById("password").value;
+
+            // Get registered user data from localStorage
+            const registeredUser = JSON.parse(
+                localStorage.getItem("registeredUser")
+            );
+
+            const message = document.getElementById("message");
+
+
+            // Check whether registration data exists
+            if (!registeredUser) {
+
+                message.style.color = "red";
+
+                message.innerHTML =
+                    "No account found. Please register first.";
+
+                return;
+            }
+
+
+            // Check username/email and password
+            if (
+                (username === registeredUser.username ||
+                 username === registeredUser.email)
+                &&
+                password === registeredUser.password
+            ) {
+
+                message.style.color = "green";
+
+                message.innerHTML =
+                    "Login successful! Redirecting...";
+
+
+                // Save login status
+                localStorage.setItem("isLoggedIn", "true");
+
+
+                // Go to dashboard
+                setTimeout(function() {
+                    window.location.href = "dashboard.html";
+                }, 1000);
+
+            }
+
+            else {
+
+                message.style.color = "red";
+
+                message.innerHTML =
+                    "Invalid username/email or password.";
+
+            }
+
+        });
+
+    </script>
+
+</body>
+</html>
