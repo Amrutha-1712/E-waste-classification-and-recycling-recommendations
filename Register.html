@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>E-Waste Care | Register</title>
+
+    <style>
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: "Segoe UI", Arial, sans-serif;
+        }
+
+        body {
+            min-height: 100vh;
+
+            display: flex;
+            justify-content: center;
+            align-items: center;
+
+            background:
+                radial-gradient(circle at 10% 20%, #34d399 0%, transparent 25%),
+                radial-gradient(circle at 90% 80%, #059669 0%, transparent 30%),
+                linear-gradient(135deg, #022c22, #064e3b, #10b981);
+
+            padding: 20px;
+
+            overflow: hidden;
+        }
+
+        /* Decorative circles */
+
+        body::before {
+            content: "";
+
+            position: absolute;
+
+            width: 350px;
+            height: 350px;
+
+            border-radius: 50%;
+
+            background: rgba(255,255,255,0.06);
+
+            top: -150px;
+            left: -100px;
+        }
+
+        body::after {
+            content: "";
+
+            position: absolute;
+
+            width: 300px;
+            height: 300px;
+
+            border-radius: 50%;
+
+            background: rgba(255,255,255,0.05);
+
+            bottom: -120px;
+            right: -80px;
+        }
+
+        /* Main Card */
+
+        .register-container {
+            position: relative;
+
+            z-index: 2;
+
+            width: 950px;
+
+            min-height: 620px;
+
+            display: flex;
+
+            background: rgba(255,255,255,0.12);
+
+            border: 1px solid rgba(255,255,255,0.25);
+
+            border-radius: 30px;
+
+            backdrop-filter: blur(20px);
+
+            box-shadow:
+                0 30px 80px rgba(0,0,0,0.35);
+
+            overflow: hidden;
+        }
+
+        /* Left Section */
+
+        .welcome-section {
+            width: 50%;
+
+            padding: 50px;
+
+            display: flex;
+
+            flex-direction: column;
+
+            justify-content: center;
+
+            align-items: center;
+
+            text-align: center;
+
+            color: white;
+
+            background:
+                linear-gradient(
+                    135deg,
+                    rgba(6,78,59,0.8),
+                    rgba(16,185,129,0.35)
+                );
+        }
+
+        .logo {
+            width: 110px;
+
+            height: 110px;
+
+            display: flex;
+
+            justify-content: center;
+
+            align-items: center;
+
+            border-radius: 50%;
+
+            background: rgba(255,255,255,0.15);
+
+            font-size: 65px;
+
+            margin-bottom: 25px;
+
+            box-shadow:
+                0 10px 30px rgba(0,0,0,0.2);
+        }
+
+        .welcome-section h1 {
+            font-size: 40px;
+
+            margin-bottom: 15px;
+        }
+
+        .welcome-section h1 span {
+            color: #86efac;
+        }
+
+        .welcome-section p {
+            max-width: 360px;
+
+            color: #d1fae5;
+
+            line-height: 1.8;
+
+            font-size: 16px;
+        }
+
+        .eco-text {
+            margin-top: 35px;
+
+            padding: 10px 20px;
+
+            border-radius: 30px;
+
+            background: rgba(255,255,255,0.1);
+
+            color: #bbf7d0;
+
+            font-size: 14px;
+        }
+
+        /* Form Section */
+
+        .form-section {
+            width: 50%;
+
+            padding: 45px 50px;
+
+            background: rgba(255,255,255,0.97);
+        }
+
+        .form-section h2 {
+            font-size: 32px;
+
+            color: #111827;
+
+            margin-bottom: 8px;
+        }
+
+        .subtitle {
+            color: #6b7280;
+
+            font-size: 14px;
+
+            margin-bottom: 25px;
+        }
+
+        /* Input */
+
+        .input-box {
+            margin-bottom: 17px;
+        }
+
+        .input-box label {
+            display: block;
+
+            color: #374151;
+
+            font-size: 14px;
+
+            font-weight: 600;
+
+            margin-bottom: 8px;
+        }
+
+        .input-box input {
+            width: 100%;
+
+            padding: 14px 15px;
+
+            border: 1px solid #d1d5db;
+
+            border-radius: 12px;
+
+            outline: none;
+
+            font-size: 15px;
+
+            background: #f9fafb;
+
+            transition: 0.3s;
+        }
+
+        .input-box input:focus {
+            border-color: #10b981;
+
+            background: white;
+
+            box-shadow:
+                0 0 0 4px rgba(16,185,129,0.12);
+        }
+
+        /* Register Button */
+
+        .register-btn {
+            width: 100%;
+
+            padding: 15px;
+
+            margin-top: 5px;
+
+            border: none;
+
+            border-radius: 12px;
+
+            color: white;
+
+            font-size: 16px;
+
+            font-weight: bold;
+
+            cursor: pointer;
+
+            background:
+                linear-gradient(
+                    135deg,
+                    #059669,
+                    #10b981
+                );
+
+            box-shadow:
+                0 8px 20px rgba(5,150,105,0.25);
+
+            transition: 0.3s;
+        }
+
+        .register-btn:hover {
+            transform: translateY(-2px);
+
+            box-shadow:
+                0 12px 25px rgba(5,150,105,0.35);
+        }
+
+        /* Login Link */
+
+        .login-text {
+            text-align: center;
+
+            margin-top: 22px;
+
+            font-size: 14px;
+
+            color: #6b7280;
+        }
+
+        .login-text a {
+            color: #059669;
+
+            font-weight: bold;
+
+            text-decoration: none;
+        }
+
+        .login-text a:hover {
+            text-decoration: underline;
+        }
+
+        /* Responsive */
+
+        @media (max-width: 800px) {
+
+            body {
+                overflow: auto;
+            }
+
+            .register-container {
+                width: 100%;
+
+                max-width: 500px;
+
+                flex-direction: column;
+            }
+
+            .welcome-section,
+            .form-section {
+                width: 100%;
+            }
+
+            .welcome-section {
+                padding: 40px 25px;
+            }
+
+            .form-section {
+                padding: 40px 25px;
+            }
+
+            .welcome-section h1 {
+                font-size: 30px;
+            }
+
+            .logo {
+                width: 85px;
+
+                height: 85px;
+
+                font-size: 50px;
+            }
+        }
+
+    </style>
+</head>
+
+<body>
+
+    <div class="register-container">
+
+        <!-- Welcome Section -->
+
+        <div class="welcome-section">
+
+            <div class="logo">
+                ♻️
+            </div>
+
+            <h1>
+                E-Waste <span>Care</span>
+            </h1>
+
+            <p>
+                Join our smart E-Waste Classification
+                and Recycling Recommendation System.
+            </p>
+
+            <div class="eco-text">
+                🌱 Make the Earth Greener
+            </div>
+
+        </div>
+
+
+        <!-- Registration Form -->
+
+        <div class="form-section">
+
+            <h2>
+                Create Account
+            </h2>
+
+            <p class="subtitle">
+                Register to start using the E-Waste system.
+            </p>
+
+
+            <form
+                action="/register"
+                method="POST"
+                onsubmit="return validateForm()">
+
+                <div class="input-box">
+
+                    <label for="username">
+                        Username
+                    </label>
+
+                    <input
+                        type="text"
+                        id="username"
+                        name="username"
+                        placeholder="Create a username"
+                        required>
+
+                </div>
+
+
+                <div class="input-box">
+
+                    <label for="email">
+                        Email Address
+                    </label>
+
+                    <input
+                        type="email"
+                        id="email"
+                        name="email"
+                        placeholder="Enter your email"
+                        required>
+
+                </div>
+
+
+                <div class="input-box">
+
+                    <label for="password">
+                        Password
+                    </label>
+
+                    <input
+                        type="password"
+                        id="password"
+                        name="password"
+                        placeholder="Create a password"
+                        minlength="6"
+                        required>
+
+                </div>
+
+
+                <div class="input-box">
+
+                    <label for="confirmPassword">
+                        Confirm Password
+                    </label>
+
+                    <input
+                        type="password"
+                        id="confirmPassword"
+                        name="confirm_password"
+                        placeholder="Confirm your password"
+                        minlength="6"
+                        required>
+
+                </div>
+
+
+                <button
+                    type="submit"
+                    class="register-btn">
+
+                    Create Account
+
+                </button>
+
+            </form>
+
+
+            <div class="login-text">
+
+                Already have an account?
+
+                <a href="login.html">
+                    Login Here
+                </a>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <script>
+
+        function validateForm() {
+
+            const password =
+                document.getElementById("password").value;
+
+            const confirmPassword =
+                document.getElementById("confirmPassword").value;
+
+            if (password !== confirmPassword) {
+
+                alert("Passwords do not match!");
+
+                return false;
+            }
+
+            return true;
+        }
+
+    </script>
+
+</body>
+</html>
