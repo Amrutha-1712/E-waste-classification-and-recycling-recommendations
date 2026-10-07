@@ -1,16 +1,29 @@
-```html
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-    <meta name="description"
-          content="EcoSort - E-Waste Classification and Recycling Recommendation System">
+    <meta
+        name="description"
+        content="ReCircuit - Laptop component classification and e-waste recycling recommendation system"
+    />
 
-    <title>EcoSort | E-Waste Classification</title>
+    <title>ReCircuit | Give Laptop Parts Another Route</title>
 
     <style>
+        :root {
+            --ink: #151515;
+            --paper: #f2eee5;
+            --paper-dark: #ded8c9;
+            --acid: #c5f04a;
+            --orange: #ff744d;
+            --blue: #8ed8ff;
+            --purple: #d48cff;
+            --gray: #6d6b65;
+            --line: rgba(21, 21, 21, 0.18);
+            --shadow: 12px 12px 0 #151515;
+        }
 
         * {
             margin: 0;
@@ -19,22 +32,18 @@
             scroll-behavior: smooth;
         }
 
-        :root {
-            --bg: #03100a;
-            --bg2: #06170e;
-            --card: rgba(10, 31, 20, 0.72);
-            --green: #63f59b;
-            --green2: #2bc96b;
-            --text: #f1fff6;
-            --muted: #8da99a;
-            --border: rgba(99, 245, 155, 0.18);
+        body {
+            overflow-x: hidden;
+            color: var(--ink);
+            font-family: Arial, Helvetica, sans-serif;
+            background:
+                radial-gradient(circle at 15% 10%, rgba(255,255,255,.7), transparent 25%),
+                var(--paper);
         }
 
-        body {
-            font-family: Arial, Helvetica, sans-serif;
-            background: var(--bg);
-            color: var(--text);
-            overflow-x: hidden;
+        body::selection {
+            color: var(--ink);
+            background: var(--acid);
         }
 
         a {
@@ -42,1340 +51,2034 @@
             text-decoration: none;
         }
 
-        /* ================= BACKGROUND ================= */
+        button {
+            font: inherit;
+        }
 
-        .background {
+        .wrap {
+            width: min(1220px, 90%);
+            margin: auto;
+        }
+
+        /* =========================================
+           BACKGROUND TEXTURE + PARTICLES
+        ========================================== */
+
+        .texture {
             position: fixed;
             inset: 0;
-            z-index: -10;
-            overflow: hidden;
-            background:
-                radial-gradient(circle at 80% 20%, rgba(50, 255, 130, 0.10), transparent 30%),
-                radial-gradient(circle at 10% 80%, rgba(50, 255, 130, 0.08), transparent 30%),
-                var(--bg);
-        }
-
-        .grid {
-            position: absolute;
-            inset: -100px;
+            z-index: -5;
+            pointer-events: none;
+            opacity: .28;
             background-image:
-                linear-gradient(rgba(99,245,155,.035) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(99,245,155,.035) 1px, transparent 1px);
-            background-size: 55px 55px;
-            animation: gridMove 18s linear infinite;
+                linear-gradient(rgba(21,21,21,.04) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(21,21,21,.04) 1px, transparent 1px);
+            background-size: 32px 32px;
         }
 
-        @keyframes gridMove {
-            to {
-                transform: translate(55px,55px);
-            }
-        }
-
-        .glow {
-            position: absolute;
-            width: 450px;
-            height: 450px;
-            border-radius: 50%;
-            background: rgba(50,255,130,.08);
-            filter: blur(110px);
-        }
-
-        .glow.one {
-            top: -200px;
-            right: -120px;
-            animation: glowMove 9s ease-in-out infinite alternate;
-        }
-
-        .glow.two {
-            bottom: -220px;
-            left: -150px;
-            animation: glowMove2 11s ease-in-out infinite alternate;
-        }
-
-        @keyframes glowMove {
-            to {
-                transform: translate(-130px,140px) scale(1.2);
-            }
-        }
-
-        @keyframes glowMove2 {
-            to {
-                transform: translate(150px,-100px) scale(1.2);
-            }
-        }
-
-        /* Floating e-waste particles */
-
-        .particle {
-            position: absolute;
-            width: 7px;
-            height: 7px;
-            border: 1px solid rgba(99,245,155,.5);
-            transform: rotate(45deg);
-            animation: floatParticle 12s linear infinite;
-        }
-
-        .p1 { left: 8%; bottom: -20px; animation-delay: -2s; }
-        .p2 { left: 22%; bottom: -20px; animation-delay: -7s; }
-        .p3 { left: 41%; bottom: -20px; animation-delay: -4s; }
-        .p4 { left: 63%; bottom: -20px; animation-delay: -9s; }
-        .p5 { left: 82%; bottom: -20px; animation-delay: -5s; }
-
-        @keyframes floatParticle {
-            0% {
-                opacity: 0;
-                transform: translateY(0) rotate(45deg);
-            }
-
-            15% {
-                opacity: .5;
-            }
-
-            100% {
-                opacity: 0;
-                transform: translateY(-110vh) rotate(405deg);
-            }
-        }
-
-        /* ================= NAVBAR ================= */
-
-        nav {
+        .grain {
             position: fixed;
-            top: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 90%;
-            max-width: 1200px;
-            padding: 14px 22px;
+            inset: 0;
+            z-index: -4;
+            pointer-events: none;
+            opacity: .08;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 180 180' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.45'/%3E%3C/svg%3E");
+        }
+
+        /* Floating data particles */
+        .particle {
+            position: fixed;
+            width: 6px;
+            height: 6px;
+            background: var(--acid);
+            border-radius: 50%;
+            z-index: -3;
+            opacity: 0;
+            animation: particleFloat 8s ease-in-out infinite;
+        }
+
+        .particle:nth-child(1) {
+            left: 8%;
+            top: 20%;
+            animation-delay: -1s;
+        }
+
+        .particle:nth-child(2) {
+            left: 22%;
+            top: 65%;
+            animation-delay: -3s;
+            background: var(--orange);
+        }
+
+        .particle:nth-child(3) {
+            left: 45%;
+            top: 35%;
+            animation-delay: -5s;
+            background: var(--blue);
+        }
+
+        .particle:nth-child(4) {
+            left: 68%;
+            top: 75%;
+            animation-delay: -2s;
+            background: var(--purple);
+        }
+
+        .particle:nth-child(5) {
+            left: 85%;
+            top: 45%;
+            animation-delay: -4s;
+        }
+
+        .particle:nth-child(6) {
+            left: 15%;
+            top: 85%;
+            animation-delay: -6s;
+            background: var(--orange);
+        }
+
+        @keyframes particleFloat {
+            0%, 100% {
+                opacity: 0;
+                transform: translateY(0) scale(0.5);
+            }
+
+            25% {
+                opacity: 0.8;
+                transform: translateY(-30px) scale(1.2);
+            }
+
+            50% {
+                opacity: 0.4;
+                transform: translateY(-60px) scale(0.8);
+            }
+
+            75% {
+                opacity: 0.9;
+                transform: translateY(-90px) scale(1.1);
+            }
+        }
+
+        /* =========================================
+           NAVIGATION
+        ========================================== */
+
+        .topbar {
+            position: relative;
+            z-index: 50;
+            padding: 24px 0;
+            border-bottom: 1px solid var(--line);
+        }
+
+        .topbar-inner {
             display: flex;
-            justify-content: space-between;
             align-items: center;
-            background: rgba(4,18,11,.78);
-            backdrop-filter: blur(18px);
-            border: 1px solid var(--border);
-            border-radius: 50px;
-            z-index: 1000;
-            box-shadow: 0 15px 50px rgba(0,0,0,.25);
+            justify-content: space-between;
+            gap: 25px;
         }
 
         .logo {
             display: flex;
             align-items: center;
-            gap: 10px;
-            font-size: 24px;
-            font-weight: 800;
+            gap: 11px;
+            font-weight: 900;
+            letter-spacing: -1px;
         }
 
-        .logo-icon {
-            width: 38px;
-            height: 38px;
-            border: 1px solid var(--green);
-            border-radius: 50%;
+        .logo-symbol {
+            width: 37px;
+            height: 37px;
             display: grid;
             place-items: center;
-            color: var(--green);
-            animation: rotateLogo 7s linear infinite;
+            color: var(--paper);
+            font-size: 20px;
+            border: 2px solid var(--ink);
+            border-radius: 50%;
+            background: var(--ink);
+            animation: logoOrbit 5s linear infinite;
         }
 
-        @keyframes rotateLogo {
-            to {
-                transform: rotate(360deg);
+        @keyframes logoOrbit {
+            0%, 100% {
+                transform: rotate(0deg);
+            }
+
+            50% {
+                transform: rotate(180deg) scale(1.08);
             }
         }
 
         .logo span {
-            color: var(--green);
+            color: var(--orange);
         }
 
         .nav-links {
             display: flex;
             align-items: center;
-            gap: 27px;
+            gap: 25px;
+            font-size: 13px;
+            font-weight: 700;
         }
 
         .nav-links a {
-            color: #a9bcb1;
-            font-size: 14px;
-            transition: .3s;
+            position: relative;
         }
 
-        .nav-links a:hover {
-            color: var(--green);
+        .nav-links a:not(.nav-cta)::after {
+            content: "";
+            position: absolute;
+            right: 0;
+            bottom: -7px;
+            left: 0;
+            height: 2px;
+            transform: scaleX(0);
+            transform-origin: right;
+            background: var(--orange);
+            transition: .3s ease;
         }
 
-        .nav-classify {
-            padding: 10px 19px;
-            border-radius: 25px;
-            background: var(--green);
-            color: #031008 !important;
-            font-weight: 800;
-            transition: .3s;
+        .nav-links a:hover::after {
+            transform: scaleX(1);
+            transform-origin: left;
         }
 
-        .nav-classify:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 10px 30px rgba(99,245,155,.3);
+        .nav-cta {
+            padding: 11px 16px;
+            border: 2px solid var(--ink);
+            background: var(--acid);
+            box-shadow: 4px 4px 0 var(--ink);
+            transition: .25s ease;
         }
 
-        /* ================= HERO ================= */
+        .nav-cta:hover {
+            transform: translate(3px, 3px);
+            box-shadow: 1px 1px 0 var(--ink);
+        }
+
+        /* =========================================
+           HERO
+        ========================================== */
 
         .hero {
-            min-height: 100vh;
-            padding: 150px 8% 80px;
-            display: flex;
+            min-height: 720px;
+            padding: 80px 0 100px;
+            display: grid;
+            grid-template-columns: .85fr 1.15fr;
             align-items: center;
-            justify-content: space-between;
-            gap: 60px;
+            gap: 40px;
         }
 
-        .hero-content {
-            width: 55%;
+        .hero-copy {
+            position: relative;
+            z-index: 3;
         }
 
-        .tag {
-            display: inline-flex;
-            align-items: center;
-            gap: 9px;
-            padding: 10px 16px;
-            border: 1px solid var(--border);
-            border-radius: 30px;
-            color: var(--green);
-            background: rgba(99,245,155,.05);
-            font-size: 11px;
+        .label {
+            width: fit-content;
+            padding: 8px 11px;
+            color: var(--paper);
+            font-size: 10px;
+            font-weight: 900;
             letter-spacing: 2px;
-            font-weight: 700;
-            animation: fadeUp .8s ease;
+            background: var(--ink);
+            transform: rotate(-2deg);
+            animation: labelWiggle 3s ease-in-out infinite;
         }
 
-        .tag::before {
-            content: "";
-            width: 7px;
-            height: 7px;
-            border-radius: 50%;
-            background: var(--green);
-            box-shadow: 0 0 15px var(--green);
-            animation: pulse 1.5s infinite;
-        }
+        @keyframes labelWiggle {
+            0%, 100% {
+                transform: rotate(-2deg);
+            }
 
-        @keyframes pulse {
             50% {
-                opacity: .3;
-                transform: scale(.6);
+                transform: rotate(2deg);
             }
         }
 
         .hero h1 {
-            margin: 25px 0;
-            font-size: clamp(55px, 7vw, 90px);
-            line-height: .95;
-            letter-spacing: -5px;
-            animation: titleIn 1s ease;
+            max-width: 550px;
+            margin: 26px 0 25px;
+            font-size: clamp(54px, 7vw, 97px);
+            line-height: .86;
+            letter-spacing: -7px;
         }
 
-        .hero h1 span {
-            color: var(--green);
-            text-shadow: 0 0 35px rgba(99,245,155,.25);
+        .hero h1 em {
+            color: var(--orange);
+            font-style: normal;
+            display: inline-block;
+            animation: textGlitch 4s ease-in-out infinite;
         }
 
-        @keyframes titleIn {
-            from {
-                opacity: 0;
-                transform: translateY(45px);
-                filter: blur(8px);
+        @keyframes textGlitch {
+            0%, 100% {
+                transform: translate(0);
             }
 
-            to {
-                opacity: 1;
-                transform: translateY(0);
-                filter: blur(0);
+            2% {
+                transform: translate(-2px, 1px);
+            }
+
+            4% {
+                transform: translate(2px, -1px);
+            }
+
+            6% {
+                transform: translate(0);
+            }
+
+            50% {
+                transform: translate(0);
+            }
+
+            52% {
+                transform: translate(1px, 2px);
+            }
+
+            54% {
+                transform: translate(-1px, -2px);
+            }
+
+            56% {
+                transform: translate(0);
             }
         }
 
-        .hero-description {
-            max-width: 650px;
-            color: var(--muted);
-            font-size: 18px;
-            line-height: 1.75;
-            animation: fadeUp 1s ease .2s both;
+        .hero-text {
+            max-width: 500px;
+            color: #56544f;
+            font-size: 17px;
+            line-height: 1.65;
         }
 
-        @keyframes fadeUp {
-            from {
-                opacity: 0;
-                transform: translateY(25px);
-            }
-
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        .hero-buttons {
-            margin-top: 35px;
+        .hero-actions {
+            margin-top: 32px;
             display: flex;
-            gap: 15px;
+            align-items: center;
             flex-wrap: wrap;
-            animation: fadeUp 1s ease .4s both;
+            gap: 15px;
         }
 
-        .btn {
-            padding: 15px 25px;
-            border-radius: 30px;
-            font-weight: 800;
-            transition: .35s;
-        }
-
-        .btn-primary {
-            background: var(--green);
-            color: #031008;
-        }
-
-        .btn-primary:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 15px 40px rgba(99,245,155,.25);
-        }
-
-        .btn-secondary {
-            border: 1px solid #294638;
-            color: white;
-        }
-
-        .btn-secondary:hover {
-            color: var(--green);
-            border-color: var(--green);
-            transform: translateY(-5px);
-        }
-
-        /* ================= HERO DEVICE ================= */
-
-        .hero-visual {
-            width: 43%;
-            min-height: 520px;
+        .button {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 9px;
+            padding: 15px 19px;
+            border: 2px solid var(--ink);
+            font-size: 13px;
+            font-weight: 900;
+            box-shadow: 5px 5px 0 var(--ink);
+            transition: .25s ease;
             position: relative;
-            display: grid;
-            place-items: center;
-        }
-
-        .orbit {
-            position: absolute;
-            width: 430px;
-            height: 430px;
-            border: 1px solid rgba(99,245,155,.15);
-            border-radius: 50%;
-            animation: orbit 18s linear infinite;
-        }
-
-        .orbit.two {
-            width: 330px;
-            height: 330px;
-            border-style: dashed;
-            animation-direction: reverse;
-            animation-duration: 13s;
-        }
-
-        @keyframes orbit {
-            to {
-                transform: rotate(360deg);
-            }
-        }
-
-        .orbit-item {
-            position: absolute;
-            width: 42px;
-            height: 42px;
-            display: grid;
-            place-items: center;
-            border: 1px solid rgba(99,245,155,.3);
-            border-radius: 12px;
-            background: #07170e;
-            color: var(--green);
-            box-shadow: 0 0 25px rgba(99,245,155,.12);
-        }
-
-        .orbit-item.one {
-            top: 20px;
-            left: 75px;
-        }
-
-        .orbit-item.two {
-            right: 10px;
-            bottom: 100px;
-        }
-
-        .orbit-item.three {
-            left: 10px;
-            bottom: 70px;
-        }
-
-        /* Laptop */
-
-        .laptop {
-            position: relative;
-            width: 310px;
-            height: 210px;
-            border: 2px solid #466453;
-            border-radius: 16px;
-            background: linear-gradient(145deg,#193223,#061009);
-            box-shadow:
-                0 0 70px rgba(99,245,155,.16),
-                inset 0 0 35px rgba(99,245,155,.05);
-            animation: laptopFloat 4s ease-in-out infinite;
-            z-index: 5;
-        }
-
-        @keyframes laptopFloat {
-            50% {
-                transform: translateY(-18px) rotateX(-3deg);
-            }
-        }
-
-        .screen {
-            position: absolute;
-            inset: 18px;
-            border: 2px solid #527662;
-            border-radius: 9px;
             overflow: hidden;
-            background:
-                linear-gradient(rgba(99,245,155,.04) 1px,transparent 1px),
-                linear-gradient(90deg,rgba(99,245,155,.04) 1px,transparent 1px),
-                #07150d;
-            background-size: 20px 20px;
         }
 
-        .screen-content {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%,-50%);
-            width: 125px;
-            height: 70px;
-            border: 2px solid var(--green);
-            border-radius: 8px;
-            background: rgba(99,245,155,.07);
-            box-shadow: 0 0 25px rgba(99,245,155,.2);
-        }
-
-        .screen-content::before {
-            content: "E-WASTE";
-            position: absolute;
-            top: 18px;
-            width: 100%;
-            text-align: center;
-            color: var(--green);
-            font-size: 11px;
-            font-weight: bold;
-            letter-spacing: 2px;
-        }
-
-        .screen-content::after {
-            content: "CLASSIFY";
-            position: absolute;
-            bottom: 17px;
-            width: 100%;
-            text-align: center;
-            color: #9ab5a5;
-            font-size: 9px;
-            letter-spacing: 1px;
-        }
-
-        .scan-line {
-            position: absolute;
-            width: 100%;
-            height: 3px;
-            background: white;
-            box-shadow:
-                0 0 10px white,
-                0 0 25px var(--green),
-                0 0 45px var(--green);
-            animation: scan 2.5s ease-in-out infinite;
-        }
-
-        @keyframes scan {
-            0%,100% {
-                top: 8%;
-            }
-
-            50% {
-                top: 90%;
-            }
-        }
-
-        .laptop-base {
-            position: absolute;
-            bottom: -17px;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 350px;
-            height: 18px;
-            border-radius: 0 0 18px 18px;
-            background: #263d30;
-        }
-
-        .laptop-base::after {
+        .button::before {
             content: "";
             position: absolute;
-            left: 50%;
-            bottom: -7px;
-            transform: translateX(-50%);
-            width: 70px;
-            height: 7px;
-            border-radius: 0 0 8px 8px;
-            background: var(--green);
-            box-shadow: 0 0 15px var(--green);
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,.4), transparent);
+            transition: .5s ease;
         }
 
-        .status-card {
-            position: absolute;
-            padding: 12px 16px;
-            border: 1px solid var(--border);
-            border-radius: 13px;
-            background: rgba(4,18,11,.9);
-            backdrop-filter: blur(12px);
-            font-size: 12px;
-            z-index: 10;
-            animation: cardFloat 3s ease-in-out infinite;
+        .button:hover::before {
+            left: 100%;
         }
 
-        .status-card strong {
-            display: block;
-            color: var(--green);
-            margin-bottom: 4px;
+        .button:hover {
+            transform: translate(4px, 4px);
+            box-shadow: 1px 1px 0 var(--ink);
         }
 
-        .status-card.one {
-            top: 70px;
-            right: -10px;
+        .button-primary {
+            background: var(--acid);
         }
 
-        .status-card.two {
-            bottom: 70px;
-            left: -10px;
-            animation-delay: -1.5s;
+        .button-secondary {
+            background: transparent;
         }
 
-        @keyframes cardFloat {
-            50% {
-                transform: translateY(-13px);
-            }
-        }
-
-        /* ================= SECTION ================= */
-
-        section {
-            padding: 120px 8%;
-        }
-
-        .section-label {
-            color: var(--green);
+        .hero-note {
+            margin-top: 30px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: var(--gray);
             font-size: 11px;
-            letter-spacing: 3px;
             font-weight: 700;
         }
 
-        .section-title {
-            margin: 15px 0;
-            font-size: clamp(38px,5vw,62px);
-            line-height: 1;
+        .hero-note::before {
+            content: "";
+            width: 32px;
+            height: 2px;
+            background: var(--orange);
+            animation: linePulse 2s ease-in-out infinite;
         }
 
-        .section-description {
-            max-width: 700px;
-            color: var(--muted);
-            line-height: 1.8;
+        @keyframes linePulse {
+            0%, 100% {
+                opacity: 0.4;
+                width: 32px;
+            }
+
+            50% {
+                opacity: 1;
+                width: 45px;
+            }
         }
 
-        /* ================= WORKFLOW ================= */
+        /* =========================================
+           EXPLODED LAPTOP VISUAL
+        ========================================== */
 
-        .workflow-section {
-            background: rgba(5,20,12,.65);
-        }
-
-        .workflow {
-            margin-top: 65px;
-            display: grid;
-            grid-template-columns: 1fr 100px 1fr 100px 1fr;
-            align-items: start;
-        }
-
-        .step {
-            text-align: center;
-        }
-
-        .step-number {
-            width: 75px;
-            height: 75px;
-            margin: auto;
-            border: 1px solid var(--green);
-            border-radius: 50%;
+        .lab-visual {
+            position: relative;
+            min-height: 560px;
             display: grid;
             place-items: center;
-            color: var(--green);
-            font-weight: 800;
-            background: #06140c;
-            box-shadow: 0 0 25px rgba(99,245,155,.08);
-            transition: .4s;
         }
 
-        .step:hover .step-number {
-            transform: scale(1.1);
-            background: var(--green);
-            color: #031008;
-            box-shadow: 0 0 35px rgba(99,245,155,.3);
+        .lab-visual::before {
+            content: "OPEN / IDENTIFY / RECOVER";
+            position: absolute;
+            top: 15px;
+            right: 0;
+            color: var(--gray);
+            font-size: 10px;
+            font-weight: 900;
+            letter-spacing: 2px;
+            writing-mode: vertical-rl;
         }
 
-        .step h3 {
-            margin: 22px 0 10px;
+        .blueprint {
+            position: absolute;
+            width: 510px;
+            height: 510px;
+            border: 1px solid rgba(21,21,21,.18);
+            border-radius: 50%;
+            animation: blueprintSpin 30s linear infinite;
         }
 
-        .step p {
-            color: #7f9889;
-            font-size: 14px;
-            line-height: 1.6;
-        }
-
-        .connector {
-            height: 2px;
-            margin-top: 37px;
-            background: #1c3627;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .connector::after {
+        .blueprint::before,
+        .blueprint::after {
             content: "";
             position: absolute;
-            width: 40px;
-            height: 100%;
-            background: var(--green);
-            box-shadow: 0 0 15px var(--green);
-            animation: flow 1.6s linear infinite;
-        }
-
-        @keyframes flow {
-            from {
-                left: -40px;
-            }
-
-            to {
-                left: 100%;
-            }
-        }
-
-        /* ================= COMPONENTS ================= */
-
-        .component-grid {
-            margin-top: 60px;
-            display: grid;
-            grid-template-columns: repeat(4,1fr);
-            gap: 18px;
-        }
-
-        .component {
-            padding: 28px;
-            min-height: 190px;
-            border: 1px solid var(--border);
-            border-radius: 20px;
-            background: linear-gradient(
-                145deg,
-                rgba(99,245,155,.06),
-                rgba(255,255,255,.01)
-            );
-            transition: .4s;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .component:hover {
-            transform: translateY(-9px);
-            border-color: rgba(99,245,155,.5);
-            box-shadow: 0 20px 45px rgba(0,0,0,.3);
-        }
-
-        .component-icon {
-            width: 50px;
-            height: 50px;
-            display: grid;
-            place-items: center;
-            border: 1px solid var(--border);
-            border-radius: 13px;
-            color: var(--green);
-            font-size: 23px;
-            margin-bottom: 20px;
-        }
-
-        .component h3 {
-            margin-bottom: 9px;
-        }
-
-        .component p {
-            color: #7f9889;
-            font-size: 13px;
-            line-height: 1.6;
-        }
-
-        /* ================= RECOMMENDATION ================= */
-
-        .recommendation {
-            background:
-                radial-gradient(
-                    circle at 80% 40%,
-                    rgba(99,245,155,.09),
-                    transparent 35%
-                ),
-                var(--bg2);
-        }
-
-        .recommendation-box {
-            margin-top: 55px;
-            padding: 55px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            gap: 50px;
-            border: 1px solid var(--border);
-            border-radius: 28px;
-            background: rgba(99,245,155,.04);
-        }
-
-        .recommendation-box h3 {
-            font-size: 38px;
-            margin-bottom: 17px;
-        }
-
-        .recommendation-box p {
-            max-width: 650px;
-            color: var(--muted);
-            line-height: 1.8;
-        }
-
-        .recycle {
-            min-width: 180px;
-            height: 180px;
-            border: 1px solid rgba(99,245,155,.25);
+            inset: 35px;
+            border: 1px dashed rgba(21,21,21,.22);
             border-radius: 50%;
-            display: grid;
-            place-items: center;
-            color: var(--green);
-            font-size: 80px;
-            animation: recycleSpin 8s linear infinite;
         }
 
-        @keyframes recycleSpin {
+        .blueprint::after {
+            inset: 105px;
+        }
+
+        @keyframes blueprintSpin {
             to {
                 transform: rotate(360deg);
             }
         }
 
-        /* ================= CTA ================= */
-
-        .cta {
-            text-align: center;
-            padding: 150px 20px;
+        .blueprint-dot {
+            position: absolute;
+            width: 12px;
+            height: 12px;
+            border: 2px solid var(--ink);
+            background: var(--acid);
+            animation: dotBlink 2s ease-in-out infinite;
         }
 
-        .cta h2 {
-            margin: 20px 0 25px;
-            font-size: clamp(45px,7vw,82px);
-            line-height: .95;
+        .dot-a {
+            top: 55px;
+            left: 110px;
         }
 
-        .cta h2 span {
-            color: var(--green);
+        .dot-b {
+            right: 55px;
+            top: 190px;
+            background: var(--orange);
+            animation-delay: -.7s;
         }
 
-        .cta p {
-            color: var(--muted);
-            margin-bottom: 35px;
+        .dot-c {
+            bottom: 72px;
+            left: 115px;
+            background: var(--blue);
+            animation-delay: -1.2s;
         }
 
-        /* ================= FOOTER ================= */
+        @keyframes dotBlink {
+            0%, 100% {
+                transform: scale(1);
+                box-shadow: 0 0 0 0 rgba(255,116,77,.15);
+            }
 
-        footer {
-            padding: 30px 8%;
-            border-top: 1px solid #15291e;
+            50% {
+                transform: scale(1.5);
+                box-shadow: 0 0 0 8px rgba(255,116,77,.15);
+            }
+        }
+
+        .device {
+            position: relative;
+            z-index: 5;
+            width: 380px;
+            height: 285px;
+            animation: deviceFloat 5s ease-in-out infinite;
+        }
+
+        @keyframes deviceFloat {
+            0%, 100% {
+                transform: translateY(0) rotate(0deg);
+            }
+
+            50% {
+                transform: translateY(-14px) rotate(-1deg);
+            }
+        }
+
+        .screen-panel {
+            position: absolute;
+            top: 0;
+            left: 53px;
+            width: 275px;
+            height: 190px;
+            padding: 13px;
+            border: 3px solid var(--ink);
+            border-radius: 13px 13px 5px 5px;
+            background: var(--paper-dark);
+            transform: perspective(600px) rotateX(-4deg);
+            box-shadow: 9px 9px 0 var(--ink);
+            transition: .4s ease;
+        }
+
+        .device:hover .screen-panel {
+            transform: perspective(600px) rotateX(-6deg) translateY(-5px);
+        }
+
+        .screen-inner {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            border: 2px solid var(--ink);
+            background:
+                linear-gradient(rgba(21,21,21,.12) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(21,21,21,.12) 1px, transparent 1px),
+                #b9dbe0;
+            background-size: 22px 22px;
+        }
+
+        .screen-inner::before {
+            content: "ANALYSIS MODE";
+            position: absolute;
+            top: 13px;
+            left: 14px;
+            color: var(--ink);
+            font-size: 9px;
+            font-weight: 900;
+            letter-spacing: 1px;
+        }
+
+        .screen-inner::after {
+            content: "READY";
+            position: absolute;
+            right: 14px;
+            bottom: 13px;
+            color: var(--orange);
+            font-size: 9px;
+            font-weight: 900;
+        }
+
+        .screen-target {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 75px;
+            height: 75px;
+            transform: translate(-50%, -50%);
+            border: 2px solid var(--orange);
+            border-radius: 50%;
+            animation: targetPulse 2.4s ease-in-out infinite;
+        }
+
+        .screen-target::before,
+        .screen-target::after {
+            content: "";
+            position: absolute;
+            background: var(--orange);
+        }
+
+        .screen-target::before {
+            top: 50%;
+            left: -15px;
+            width: 105px;
+            height: 2px;
+        }
+
+        .screen-target::after {
+            top: -15px;
+            left: 50%;
+            width: 2px;
+            height: 105px;
+        }
+
+        @keyframes targetPulse {
+            0%, 100% {
+                transform: translate(-50%, -50%) scale(1);
+                opacity: 0.6;
+            }
+
+            50% {
+                transform: translate(-50%, -50%) scale(1.16);
+                opacity: 0.4;
+            }
+        }
+
+        .scan-beam {
+            position: absolute;
+            top: 8px;
+            left: 0;
+            width: 3px;
+            height: 165px;
+            background: var(--orange);
+            box-shadow: 0 0 14px var(--orange);
+            animation: beamMove 2.8s ease-in-out infinite;
+        }
+
+        @keyframes beamMove {
+            0%, 100% {
+                left: 4%;
+            }
+
+            50% {
+                left: 95%;
+            }
+        }
+
+        .base-panel {
+            position: absolute;
+            top: 190px;
+            left: 0;
+            width: 380px;
+            height: 85px;
+            border: 3px solid var(--ink);
+            border-radius: 5px 5px 18px 18px;
+            background: var(--paper-dark);
+            transform: perspective(600px) rotateX(55deg);
+            box-shadow: 10px 14px 0 var(--ink);
+            transition: .4s ease;
+        }
+
+        .device:hover .base-panel {
+            transform: perspective(600px) rotateX(57deg) translateY(-3px);
+        }
+
+        .keyboard {
+            position: absolute;
+            top: 207px;
+            left: 48px;
+            width: 230px;
+            height: 42px;
+            display: grid;
+            grid-template-columns: repeat(11, 1fr);
+            gap: 4px;
+            transform: perspective(600px) rotateX(55deg);
+        }
+
+        .key {
+            height: 10px;
+            border: 1px solid var(--ink);
+            background: #bdb8aa;
+            transition: .2s ease;
+        }
+
+        .key:hover {
+            background: var(--acid);
+            transform: scale(1.15);
+        }
+
+        .key:nth-child(7n) {
+            background: var(--acid);
+        }
+
+        .trackpad {
+            position: absolute;
+            top: 239px;
+            left: 147px;
+            width: 75px;
+            height: 28px;
+            border: 2px solid var(--ink);
+            transform: perspective(600px) rotateX(55deg);
+        }
+
+        .component-tag {
+            position: absolute;
+            z-index: 9;
+            padding: 8px 10px;
+            color: var(--ink);
+            font-size: 10px;
+            font-weight: 900;
+            border: 2px solid var(--ink);
+            background: var(--acid);
+            box-shadow: 4px 4px 0 var(--ink);
+            animation: tagFloat 3s ease-in-out infinite;
+            cursor: pointer;
+            transition: .3s ease;
+        }
+
+        .component-tag:hover {
+            transform: translateY(-15px) scale(1.1);
+            box-shadow: 8px 8px 0 var(--ink);
+        }
+
+        .component-tag::before {
+            content: "";
+            position: absolute;
+            top: 50%;
+            width: 42px;
+            height: 1px;
+            background: var(--ink);
+        }
+
+        .tag-battery {
+            top: 88px;
+            right: 2px;
+        }
+
+        .tag-battery::before {
+            right: 100%;
+        }
+
+        .tag-ssd {
+            bottom: 70px;
+            left: 4px;
+            background: var(--blue);
+            animation-delay: -1s;
+        }
+
+        .tag-ssd::before {
+            left: 100%;
+        }
+
+        .tag-camera {
+            top: 205px;
+            left: 20px;
+            background: var(--orange);
+            animation-delay: -1.7s;
+        }
+
+        .tag-camera::before {
+            left: 100%;
+        }
+
+        @keyframes tagFloat {
+            0%, 100% {
+                transform: translateY(0) rotate(0deg);
+            }
+
+            50% {
+                transform: translateY(-9px) rotate(2deg);
+            }
+        }
+
+        /* Orbiting components */
+        .orbit-component {
+            position: absolute;
+            width: 45px;
+            height: 45px;
+            display: grid;
+            place-items: center;
+            color: var(--paper);
+            font-size: 18px;
+            font-weight: 900;
+            border: 2px solid var(--ink);
+            border-radius: 50%;
+            background: var(--ink);
+            z-index: 8;
+            animation: orbitFloat 6s ease-in-out infinite;
+        }
+
+        .orbit-component:nth-child(1) {
+            top: 120px;
+            left: 40px;
+            background: var(--orange);
+            animation-delay: -1s;
+        }
+
+        .orbit-component:nth-child(2) {
+            top: 60px;
+            right: 80px;
+            background: var(--blue);
+            animation-delay: -2s;
+        }
+
+        .orbit-component:nth-child(3) {
+            bottom: 100px;
+            right: 20px;
+            background: var(--purple);
+            animation-delay: -3s;
+        }
+
+        .orbit-component:nth-child(4) {
+            bottom: 40px;
+            left: 80px;
+            background: var(--acid);
+            color: var(--ink);
+            animation-delay: -4s;
+        }
+
+        @keyframes orbitFloat {
+            0%, 100% {
+                transform: translateY(0) rotate(0deg);
+            }
+
+            50% {
+                transform: translateY(-15px) rotate(180deg);
+            }
+        }
+
+        .live-status {
+            position: absolute;
+            right: 35px;
+            bottom: 34px;
+            z-index: 10;
+            padding: 12px;
+            border: 2px solid var(--ink);
+            background: var(--paper);
+            box-shadow: 5px 5px 0 var(--ink);
+            animation: statusPulse 2s ease-in-out infinite;
+        }
+
+        @keyframes statusPulse {
+            0%, 100% {
+                transform: scale(1);
+            }
+
+            50% {
+                transform: scale(1.02);
+            }
+        }
+
+        .live-status strong {
+            display: block;
+            margin-bottom: 4px;
+            font-size: 12px;
+        }
+
+        .live-status span {
+            color: var(--orange);
+            font-size: 10px;
+            font-weight: 900;
+        }
+
+        .status-indicator {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            background: var(--acid);
+            border-radius: 50%;
+            margin-right: 6px;
+            animation: indicatorBlink 1.5s ease-in-out infinite;
+        }
+
+        @keyframes indicatorBlink {
+            0%, 100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.3;
+            }
+        }
+
+        /* =========================================
+           TICKER
+        ========================================== */
+
+        .ticker {
+            overflow: hidden;
+            color: var(--paper);
+            border-top: 2px solid var(--ink);
+            border-bottom: 2px solid var(--ink);
+            background: var(--ink);
+        }
+
+        .ticker-track {
+            width: max-content;
+            display: flex;
+            gap: 35px;
+            padding: 13px 0;
+            font-size: 11px;
+            font-weight: 900;
+            letter-spacing: 1px;
+            animation: tickerMove 24s linear infinite;
+        }
+
+        .ticker-track span:nth-child(even) {
+            color: var(--acid);
+        }
+
+        @keyframes tickerMove {
+            to {
+                transform: translateX(-50%);
+            }
+        }
+
+        /* =========================================
+           SECTIONS
+        ========================================== */
+
+        section:not(.hero) {
+            padding: 115px 0;
+        }
+
+        .section-head {
+            display: flex;
+            align-items: end;
+            justify-content: space-between;
+            gap: 30px;
+        }
+
+        .section-title {
+            max-width: 680px;
+            margin-top: 15px;
+            font-size: clamp(38px, 5vw, 65px);
+            line-height: .92;
+            letter-spacing: -4px;
+        }
+
+        .section-intro {
+            max-width: 420px;
+            color: var(--gray);
+            font-size: 15px;
+            line-height: 1.7;
+        }
+
+        /* =========================================
+           PROCESS
+        ========================================== */
+
+        .process-section {
+            background: var(--acid);
+            border-bottom: 2px solid var(--ink);
+        }
+
+        .process-grid {
+            margin-top: 65px;
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 18px;
+        }
+
+        .process-card {
+            position: relative;
+            min-height: 270px;
+            padding: 25px;
+            border: 2px solid var(--ink);
+            background: var(--paper);
+            box-shadow: var(--shadow);
+            transition: .3s ease;
+            overflow: hidden;
+        }
+
+        .process-card::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 4px;
+            background: linear-gradient(90deg, var(--orange), var(--blue), var(--purple));
+            transform: scaleX(0);
+            transform-origin: left;
+            transition: .4s ease;
+        }
+
+        .process-card:hover::before {
+            transform: scaleX(1);
+        }
+
+        .process-card:hover {
+            transform: translateY(-9px) rotate(-1deg);
+        }
+
+        .process-number {
+            position: absolute;
+            top: 17px;
+            right: 20px;
+            color: var(--orange);
+            font-size: 38px;
+            font-weight: 900;
+            line-height: 1;
+        }
+
+        .process-icon {
+            width: 57px;
+            height: 57px;
+            display: grid;
+            place-items: center;
+            margin-bottom: 30px;
+            font-size: 23px;
+            border: 2px solid var(--ink);
+            background: var(--orange);
+            transition: .3s ease;
+        }
+
+        .process-card:hover .process-icon {
+            transform: scale(1.15) rotate(10deg);
+        }
+
+        .process-card:nth-child(2) .process-icon {
+            background: var(--blue);
+        }
+
+        .process-card:nth-child(3) .process-icon {
+            background: var(--acid);
+        }
+
+        .process-card h3 {
+            margin-bottom: 11px;
+            font-size: 23px;
+        }
+
+        .process-card p {
+            color: var(--gray);
+            font-size: 13px;
+            line-height: 1.65;
+        }
+
+        /* =========================================
+           COMPONENTS
+        ========================================== */
+
+        .component-layout {
+            margin-top: 65px;
+            display: grid;
+            grid-template-columns: .75fr 1.25fr;
+            gap: 70px;
+        }
+
+        .component-note {
+            align-self: start;
+            padding: 27px;
+            border: 2px solid var(--ink);
+            background: var(--orange);
+            box-shadow: var(--shadow);
+            transform: rotate(-2deg);
+            transition: .3s ease;
+        }
+
+        .component-note:hover {
+            transform: rotate(0deg) scale(1.02);
+        }
+
+        .component-note h3 {
+            margin-bottom: 15px;
+            font-size: 29px;
+            line-height: 1;
+        }
+
+        .component-note p {
+            color: #422219;
+            font-size: 13px;
+            line-height: 1.7;
+        }
+
+        .component-note small {
+            display: block;
+            margin-top: 28px;
+            padding-top: 12px;
+            border-top: 1px solid rgba(21,21,21,.35);
+            font-size: 10px;
+            font-weight: 900;
+            letter-spacing: 1px;
+        }
+
+        .component-list {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            border-top: 2px solid var(--ink);
+        }
+
+        .component-row {
+            min-height: 72px;
+            padding: 16px 12px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            border-bottom: 2px solid var(--ink);
+            transition: .25s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .component-row::before {
+            content: "";
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 4px;
+            height: 100%;
+            background: var(--acid);
+            transform: scaleY(0);
+            transform-origin: bottom;
+            transition: .3s ease;
+        }
+
+        .component-row:hover::before {
+            transform: scaleY(1);
+        }
+
+        .component-row:nth-child(odd) {
+            border-right: 2px solid var(--ink);
+        }
+
+        .component-row:hover {
+            padding-left: 20px;
+            color: var(--orange);
+            background: rgba(255,255,255,.42);
+        }
+
+        .component-index {
+            width: 25px;
+            height: 25px;
+            display: grid;
+            place-items: center;
+            flex-shrink: 0;
+            color: var(--paper);
+            font-size: 10px;
+            font-weight: 900;
+            background: var(--ink);
+            transition: .3s ease;
+        }
+
+        .component-row:hover .component-index {
+            background: var(--orange);
+            transform: scale(1.2) rotate(10deg);
+        }
+
+        .component-row span:last-child {
+            font-size: 13px;
+            font-weight: 800;
+        }
+
+        /* =========================================
+           CLASSIFICATION PANEL
+        ========================================== */
+
+        .classify-section {
+            color: var(--paper);
+            background: var(--ink);
+        }
+
+        .classify-section .section-intro {
+            color: #b5b2a8;
+        }
+
+        .classify-box {
+            margin-top: 60px;
+            padding: 38px;
+            display: grid;
+            grid-template-columns: 1fr .9fr;
+            gap: 35px;
+            border: 2px solid var(--paper);
+            background:
+                linear-gradient(135deg, rgba(197,240,74,.12), transparent 45%),
+                #202020;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .classify-box::before {
+            content: "";
+            position: absolute;
+            top: -50%;
+            right: -50%;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle, rgba(197,240,74,.08), transparent 70%);
+            animation: glowPulse 4s ease-in-out infinite;
+        }
+
+        @keyframes glowPulse {
+            0%, 100% {
+                transform: scale(1);
+                opacity: 0.5;
+            }
+
+            50% {
+                transform: scale(1.2);
+                opacity: 0.8;
+            }
+        }
+
+        .classify-box h3 {
+            max-width: 550px;
+            font-size: clamp(32px, 5vw, 60px);
+            line-height: .92;
+            letter-spacing: -3px;
+        }
+
+        .classify-box h3 span {
+            color: var(--acid);
+            display: inline-block;
+            animation: spanBounce 3s ease-in-out infinite;
+        }
+
+        @keyframes spanBounce {
+            0%, 100% {
+                transform: translateY(0);
+            }
+
+            50% {
+                transform: translateY(-5px);
+            }
+        }
+
+        .classify-box p {
+            max-width: 530px;
+            margin-top: 21px;
+            color: #b9b7b0;
+            line-height: 1.7;
+        }
+
+        .method-grid {
+            margin-top: 25px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .method {
+            padding: 9px 11px;
+            color: var(--acid);
+            font-size: 11px;
+            font-weight: 900;
+            border: 1px solid rgba(197,240,74,.45);
+            transition: .3s ease;
+        }
+
+        .method:hover {
+            background: var(--acid);
+            color: var(--ink);
+            transform: translateY(-3px);
+        }
+
+        .classify-actions {
+            margin-top: 27px;
+        }
+
+        .classify-box .button-primary {
+            color: var(--ink);
+            border-color: var(--acid);
+        }
+
+        .upload-window {
+            position: relative;
+            min-height: 275px;
+            padding: 17px;
+            border: 2px solid var(--paper);
+            background: #0e0e0e;
+            z-index: 2;
+        }
+
+        .window-top {
             display: flex;
             justify-content: space-between;
-            color: #6e8277;
-            font-size: 13px;
+            padding-bottom: 13px;
+            border-bottom: 1px solid rgba(242,238,229,.25);
+            color: var(--paper-dark);
+            font-size: 10px;
+            font-weight: 900;
+            letter-spacing: 1px;
         }
 
-        /* ================= RESPONSIVE ================= */
+        .window-body {
+            min-height: 210px;
+            display: grid;
+            place-items: center;
+            text-align: center;
+            border: 1px dashed rgba(242,238,229,.45);
+            border-top: 0;
+            transition: .3s ease;
+        }
 
-        @media(max-width:1050px) {
+        .window-body:hover {
+            border-style: solid;
+            background: rgba(197,240,74,.05);
+        }
 
-            .component-grid {
-                grid-template-columns: repeat(2,1fr);
+        .camera-symbol {
+            width: 76px;
+            height: 52px;
+            position: relative;
+            margin: auto auto 16px;
+            border: 2px solid var(--acid);
+            border-radius: 10px;
+            animation: cameraFloat 3s ease-in-out infinite;
+        }
+
+        @keyframes cameraFloat {
+            0%, 100% {
+                transform: translateY(0);
             }
 
+            50% {
+                transform: translateY(-8px);
+            }
         }
 
-        @media(max-width:900px) {
+        .camera-symbol::before {
+            content: "";
+            position: absolute;
+            top: -10px;
+            left: 16px;
+            width: 23px;
+            height: 10px;
+            border: 2px solid var(--acid);
+            border-bottom: 0;
+        }
 
+        .camera-symbol::after {
+            content: "";
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 22px;
+            height: 22px;
+            transform: translate(-50%, -50%);
+            border: 2px solid var(--acid);
+            border-radius: 50%;
+            box-shadow: 0 0 20px var(--acid);
+            animation: cameraFocus 2s ease-in-out infinite;
+        }
+
+        @keyframes cameraFocus {
+            0%, 100% {
+                transform: translate(-50%, -50%) scale(1);
+                opacity: 1;
+            }
+
+            50% {
+                transform: translate(-50%, -50%) scale(0.65);
+                opacity: 0.6;
+            }
+        }
+
+        .window-body p {
+            color: var(--paper-dark);
+            font-size: 11px;
+            line-height: 1.6;
+        }
+
+        /* =========================================
+           FOOTER
+        ========================================== */
+
+        .footer {
+            padding: 30px 0;
+            color: var(--paper);
+            background: var(--ink);
+        }
+
+        .footer-inner {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 20px;
+            font-size: 11px;
+        }
+
+        .footer-accent {
+            color: var(--acid);
+        }
+
+        /* =========================================
+           RESPONSIVE
+        ========================================== */
+
+        @media (max-width: 1000px) {
             .hero {
-                flex-direction: column;
+                grid-template-columns: 1fr;
+                padding-top: 75px;
+            }
+
+            .hero-copy {
                 text-align: center;
-                padding-top: 160px;
             }
 
-            .hero-content,
-            .hero-visual {
-                width: 100%;
+            .label,
+            .hero-note {
+                margin-right: auto;
+                margin-left: auto;
             }
 
-            .hero-description {
-                margin: auto;
+            .hero-text {
+                margin-right: auto;
+                margin-left: auto;
             }
 
-            .hero-buttons {
+            .hero-actions {
                 justify-content: center;
             }
 
-            .workflow {
+            .component-layout {
                 grid-template-columns: 1fr;
-                gap: 25px;
             }
 
-            .connector {
-                width: 2px;
-                height: 45px;
-                margin: auto;
+            .component-note {
+                max-width: 500px;
             }
 
-            .connector::after {
-                width: 100%;
-                height: 18px;
-                animation: verticalFlow 1.5s linear infinite;
+            .classify-box {
+                grid-template-columns: 1fr;
             }
-
-            @keyframes verticalFlow {
-                from {
-                    top: -18px;
-                }
-
-                to {
-                    top: 100%;
-                }
-            }
-
-            .recommendation-box {
-                flex-direction: column;
-                text-align: center;
-            }
-
         }
 
-        @media(max-width:700px) {
-
-            nav {
-                width: 94%;
-            }
-
-            .nav-links a:not(.nav-classify) {
+        @media (max-width: 800px) {
+            .nav-links a:not(.nav-cta) {
                 display: none;
             }
 
-            .component-grid {
+            .section-head {
+                display: block;
+            }
+
+            .section-intro {
+                margin-top: 20px;
+            }
+
+            .process-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 600px) {
+            .hero h1 {
+                font-size: 57px;
+                letter-spacing: -4px;
+            }
+
+            .lab-visual {
+                min-height: 480px;
+                transform: scale(.78);
+                margin: -65px 0;
+            }
+
+            .blueprint {
+                width: 410px;
+                height: 410px;
+            }
+
+            .component-list {
                 grid-template-columns: 1fr;
             }
 
-            .hero h1 {
-                font-size: 55px;
-                letter-spacing: -3px;
+            .component-row:nth-child(odd) {
+                border-right: 0;
             }
 
-            .orbit {
-                width: 330px;
-                height: 330px;
+            .classify-box {
+                padding: 25px;
             }
 
-            .orbit.two {
-                width: 270px;
-                height: 270px;
-            }
-
-            .laptop {
-                width: 270px;
-                height: 190px;
-            }
-
-            .laptop-base {
-                width: 300px;
-            }
-
-            .status-card.one {
-                right: 0;
-            }
-
-            .status-card.two {
-                left: 0;
-            }
-
-            .recommendation-box {
-                padding: 35px 25px;
-            }
-
-            .recommendation-box h3 {
-                font-size: 30px;
-            }
-
-            footer {
+            .footer-inner {
                 flex-direction: column;
                 text-align: center;
-                gap: 10px;
             }
-
         }
 
+        @media (prefers-reduced-motion: reduce) {
+            *,
+            *::before,
+            *::after {
+                animation-duration: .01ms !important;
+                animation-iteration-count: 1 !important;
+                scroll-behavior: auto !important;
+            }
+        }
     </style>
 </head>
 
 <body>
 
-<!-- ================= BACKGROUND ================= -->
+    <div class="texture"></div>
+    <div class="grain"></div>
 
-<div class="background">
-    <div class="grid"></div>
+    <!-- Floating particles -->
+    <div class="particle"></div>
+    <div class="particle"></div>
+    <div class="particle"></div>
+    <div class="particle"></div>
+    <div class="particle"></div>
+    <div class="particle"></div>
 
-    <div class="glow one"></div>
-    <div class="glow two"></div>
+    <!-- NAVIGATION -->
+    <header class="topbar">
+        <div class="wrap topbar-inner">
 
-    <span class="particle p1"></span>
-    <span class="particle p2"></span>
-    <span class="particle p3"></span>
-    <span class="particle p4"></span>
-    <span class="particle p5"></span>
-</div>
-
-
-<!-- ================= NAVBAR ================= -->
-
-<nav>
-
-    <a href="#home" class="logo">
-        <div class="logo-icon">♻</div>
-        <div><span>Eco</span>Sort</div>
-    </a>
-
-    <div class="nav-links">
-
-        <a href="#home">Home</a>
-
-        <a href="#how">How It Works</a>
-
-        <a href="#components">Components</a>
-
-        <a href="#recommendation">Recommendation</a>
-
-        <a href="classify.html" class="nav-classify">
-            Classify →
-        </a>
-
-    </div>
-
-</nav>
-
-
-<!-- ================= HERO ================= -->
-
-<main>
-
-<section class="hero" id="home">
-
-    <div class="hero-content">
-
-        <div class="tag">
-            E-WASTE CLASSIFICATION SYSTEM
-        </div>
-
-        <h1>
-            Give Electronic<br>
-            Waste A<br>
-            <span>New Purpose.</span>
-        </h1>
-
-        <p class="hero-description">
-            EcoSort identifies electronic components from images
-            and provides suitable recycling and disposal guidance.
-            Turn unwanted electronic parts into responsible
-            recycling decisions.
-        </p>
-
-        <div class="hero-buttons">
-
-            <a href="classify.html" class="btn btn-primary">
-                Start Classification →
+            <a href="#home" class="logo">
+                <div class="logo-symbol">↻</div>
+                <div><span>Re</span>Circuit</div>
             </a>
 
-            <a href="#how" class="btn btn-secondary">
-                Explore System
-            </a>
+            <nav class="nav-links">
+                <a href="#process">Process</a>
+                <a href="#components">Parts</a>
+                <a href="classify.html" class="nav-cta">Open Scanner</a>
+            </nav>
 
         </div>
+    </header>
 
-    </div>
+    <main>
 
+        <!-- HERO -->
+        <section class="hero wrap" id="home">
 
-    <!-- Animated project visual -->
+            <div class="hero-copy">
 
-    <div class="hero-visual">
+                <div class="label">
+                    LAPTOP E-WASTE / FIELD GUIDE 01
+                </div>
 
-        <div class="orbit">
+                <h1>
+                    Don't Bin<br />
+                    The <em>Unknown.</em>
+                </h1>
 
-            <div class="orbit-item one">▣</div>
+                <p class="hero-text">
+                    ReCircuit helps you identify laptop components from a
+                    camera image or uploaded photo, then points each part
+                    toward a more responsible recycling route.
+                </p>
 
-            <div class="orbit-item two">▰</div>
+                <div class="hero-actions">
 
-        </div>
+                    <a href="classify.html" class="button button-primary">
+                        Scan a Component →
+                    </a>
 
+                    <a href="#process" class="button button-secondary">
+                        See How It Works
+                    </a>
 
-        <div class="orbit two">
+                </div>
 
-            <div class="orbit-item three">⌘</div>
-
-        </div>
-
-
-        <!-- Laptop -->
-
-        <div class="laptop">
-
-            <div class="screen">
-
-                <div class="screen-content"></div>
-
-                <div class="scan-line"></div>
+                <div class="hero-note">
+                    Built for laptop component classification
+                </div>
 
             </div>
 
-            <div class="laptop-base"></div>
 
-        </div>
+            <div class="lab-visual">
 
+                <div class="blueprint"></div>
 
-        <div class="status-card one">
+                <span class="blueprint-dot dot-a"></span>
+                <span class="blueprint-dot dot-b"></span>
+                <span class="blueprint-dot dot-c"></span>
 
-            <strong>Component Scan</strong>
+                <!-- Orbiting components -->
+                <div class="orbit-component">⌁</div>
+                <div class="orbit-component">▰</div>
+                <div class="orbit-component">◉</div>
+                <div class="orbit-component">◈</div>
 
-            Image analysis active
+                <div class="device">
 
-        </div>
+                    <div class="screen-panel">
 
+                        <div class="screen-inner">
+                            <div class="screen-target"></div>
+                            <div class="scan-beam"></div>
+                        </div>
 
-        <div class="status-card two">
+                    </div>
 
-            <strong>Recycle Route</strong>
+                    <div class="base-panel"></div>
 
-            Recommendation ready
+                    <div class="keyboard">
 
-        </div>
+                        <span class="key"></span>
+                        <span class="key"></span>
+                        <span class="key"></span>
+                        <span class="key"></span>
+                        <span class="key"></span>
+                        <span class="key"></span>
+                        <span class="key"></span>
+                        <span class="key"></span>
+                        <span class="key"></span>
+                        <span class="key"></span>
+                        <span class="key"></span>
 
-    </div>
+                        <span class="key"></span>
+                        <span class="key"></span>
+                        <span class="key"></span>
+                        <span class="key"></span>
+                        <span class="key"></span>
+                        <span class="key"></span>
+                        <span class="key"></span>
+                        <span class="key"></span>
+                        <span class="key"></span>
+                        <span class="key"></span>
+                        <span class="key"></span>
 
-</section>
+                        <span class="key"></span>
+                        <span class="key"></span>
+                        <span class="key"></span>
+                        <span class="key"></span>
+                        <span class="key"></span>
+                        <span class="key"></span>
+                        <span class="key"></span>
+                        <span class="key"></span>
+                        <span class="key"></span>
+                        <span class="key"></span>
+                        <span class="key"></span>
 
+                        <span class="key"></span>
+                        <span class="key"></span>
+                        <span class="key"></span>
+                        <span class="key"></span>
+                        <span class="key"></span>
+                        <span class="key"></span>
+                        <span class="key"></span>
+                        <span class="key"></span>
+                        <span class="key"></span>
+                        <span class="key"></span>
+                        <span class="key"></span>
 
-<!-- ================= HOW IT WORKS ================= -->
+                    </div>
 
-<section class="workflow-section" id="how">
+                    <div class="trackpad"></div>
 
-    <div class="section-label">
-        HOW IT WORKS
-    </div>
+                </div>
 
-    <h2 class="section-title">
-        From Image To<br>
-        Responsible Recycling.
-    </h2>
+                <div class="component-tag tag-battery">
+                    BATTERY
+                </div>
 
-    <p class="section-description">
-        EcoSort follows a simple process to identify an
-        electronic component and provide an appropriate
-        recycling recommendation.
-    </p>
+                <div class="component-tag tag-ssd">
+                    SSD
+                </div>
 
+                <div class="component-tag tag-camera">
+                    WEBCAM
+                </div>
 
-    <div class="workflow">
+                <div class="live-status">
+                    <strong>
+                        <span class="status-indicator"></span>
+                        SCAN STATUS
+                    </strong>
 
-        <div class="step">
+                    <span>
+                        WAITING FOR IMAGE
+                    </span>
+                </div>
 
-            <div class="step-number">
-                01
             </div>
 
-            <h3>Upload</h3>
-
-            <p>
-                Upload a clear image of the
-                electronic component.
-            </p>
-
-        </div>
+        </section>
 
 
-        <div class="connector"></div>
+        <!-- MOVING TICKER -->
+        <div class="ticker">
 
+            <div class="ticker-track">
 
-        <div class="step">
+                <span>IDENTIFY BEFORE DISPOSAL</span>
+                <span>✦</span>
 
-            <div class="step-number">
-                02
+                <span>RECOVER WHAT CAN BE RECOVERED</span>
+                <span>✦</span>
+
+                <span>CAMERA OR UPLOAD</span>
+                <span>✦</span>
+
+                <span>IDENTIFY BEFORE DISPOSAL</span>
+                <span>✦</span>
+
+                <span>RECOVER WHAT CAN BE RECOVERED</span>
+                <span>✦</span>
+
+                <span>CAMERA OR UPLOAD</span>
+                <span>✦</span>
+
             </div>
 
-            <h3>Classify</h3>
-
-            <p>
-                The system identifies the
-                component category from the image.
-            </p>
-
         </div>
 
 
-        <div class="connector"></div>
+        <!-- PROCESS -->
+        <section class="process-section" id="process">
+
+            <div class="wrap">
+
+                <div class="section-head">
+
+                    <div>
+
+                        <div class="label">
+                            THE WORKFLOW
+                        </div>
+
+                        <h2 class="section-title">
+                            A tiny investigation<br />
+                            for every part.
+                        </h2>
+
+                    </div>
+
+                    <p class="section-intro">
+                        No technical knowledge is required. Give the system
+                        an image, let it recognize the component, and follow
+                        the recommended route.
+                    </p>
+
+                </div>
 
 
-        <div class="step">
+                <div class="process-grid">
 
-            <div class="step-number">
-                03
+                    <article class="process-card">
+
+                        <div class="process-number">
+                            01
+                        </div>
+
+                        <div class="process-icon">
+                            ⌾
+                        </div>
+
+                        <h3>
+                            Capture
+                        </h3>
+
+                        <p>
+                            Use your device camera or upload a clear image of
+                            the laptop component you want to identify.
+                        </p>
+
+                    </article>
+
+
+                    <article class="process-card">
+
+                        <div class="process-number">
+                            02
+                        </div>
+
+                        <div class="process-icon">
+                            ⌁
+                        </div>
+
+                        <h3>
+                            Classify
+                        </h3>
+
+                        <p>
+                            The image classification system compares the
+                            visible features with supported laptop component
+                            categories.
+                        </p>
+
+                    </article>
+
+
+                    <article class="process-card">
+
+                        <div class="process-number">
+                            03
+                        </div>
+
+                        <div class="process-icon">
+                            ↗
+                        </div>
+
+                        <h3>
+                            Redirect
+                        </h3>
+
+                        <p>
+                            Receive a recommendation that helps you choose a
+                            suitable recycling or disposal option.
+                        </p>
+
+                    </article>
+
+                </div>
+
             </div>
 
-            <h3>Recycle</h3>
+        </section>
 
-            <p>
-                Receive suitable handling,
-                recycling and disposal guidance.
-            </p>
+
+        <!-- COMPONENTS -->
+        <section id="components">
+
+            <div class="wrap">
+
+                <div class="section-head">
+
+                    <div>
+
+                        <div class="label">
+                            SUPPORTED PARTS
+                        </div>
+
+                        <h2 class="section-title">
+                            The laptop,<br />
+                            taken apart.
+                        </h2>
+
+                    </div>
+
+                    <p class="section-intro">
+                        Different materials need different handling. These are
+                        the laptop components currently targeted by the
+                        classification system.
+                    </p>
+
+                </div>
+
+
+                <div class="component-layout">
+
+                    <aside class="component-note">
+
+                        <h3>
+                            Why identify it?
+                        </h3>
+
+                        <p>
+                            A battery is not handled like a bezel. An SSD is
+                            not handled like an LCD screen. Correct
+                            identification is the first step toward safer
+                            e-waste management.
+                        </p>
+
+                        <small>
+                            CLASSIFICATION TARGETS / 11 CATEGORIES
+                        </small>
+
+                    </aside>
+
+
+                    <div class="component-list">
+
+                        <div class="component-row">
+                            <span class="component-index">01</span>
+                            <span>Battery</span>
+                        </div>
+
+                        <div class="component-row">
+                            <span class="component-index">02</span>
+                            <span>USB Port</span>
+                        </div>
+
+                        <div class="component-row">
+                            <span class="component-index">03</span>
+                            <span>WiFi Card</span>
+                        </div>
+
+                        <div class="component-row">
+                            <span class="component-index">04</span>
+                            <span>Speaker</span>
+                        </div>
+
+                        <div class="component-row">
+                            <span class="component-index">05</span>
+                            <span>CMOS Battery</span>
+                        </div>
+
+                        <div class="component-row">
+                            <span class="component-index">06</span>
+                            <span>Hard Disk Drive</span>
+                        </div>
+
+                        <div class="component-row">
+                            <span class="component-index">07</span>
+                            <span>WebCam</span>
+                        </div>
+
+                        <div class="component-row">
+                            <span class="component-index">08</span>
+                            <span>LCD Screen</span>
+                        </div>
+
+                        <div class="component-row">
+                            <span class="component-index">09</span>
+                            <span>Bezel</span>
+                        </div>
+
+                        <div class="component-row">
+                            <span class="component-index">10</span>
+                            <span>Heat Sink</span>
+                        </div>
+
+                        <div class="component-row">
+                            <span class="component-index">11</span>
+                            <span>SSD</span>
+                        </div>
+
+                        <div class="component-row">
+                            <span class="component-index">+</span>
+                            <span>More categories later</span>
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <!-- CLASSIFICATION -->
+        <section class="classify-section" id="classify">
+
+            <div class="wrap">
+
+                <div class="section-head">
+
+                    <div>
+
+                        <div class="label">
+                            THE SCANNER
+                        </div>
+
+                        <h2 class="section-title">
+                            Let the image<br />
+                            speak first.
+                        </h2>
+
+                    </div>
+
+                    <p class="section-intro">
+                        The classifier is designed around two simple inputs:
+                        a live camera capture or an image already stored on
+                        your device.
+                    </p>
+
+                </div>
+
+
+                <div class="classify-box">
+
+                    <div>
+
+                        <h3>
+                            Point it.<br />
+                            Upload it.<br />
+                            <span>Route it.</span>
+                        </h3>
+
+                        <p>
+                            Start with the component image. After prediction,
+                            the system presents the component name and its
+                            recommended recycling or disposal guidance.
+                        </p>
+
+
+                        <div class="method-grid">
+
+                            <span class="method">
+                                CAMERA ACCESS
+                            </span>
+
+                            <span class="method">
+                                IMAGE UPLOAD
+                            </span>
+
+                            <span class="method">
+                                COMPONENT RESULT
+                            </span>
+
+                            <span class="method">
+                                RECYCLING GUIDE
+                            </span>
+
+                        </div>
+
+
+                        <div class="classify-actions">
+
+                            <a
+                                href="classify.html"
+                                class="button button-primary"
+                            >
+                                Launch Classification →
+                            </a>
+
+                        </div>
+
+                    </div>
+
+
+                    <div class="upload-window">
+
+                        <div class="window-top">
+
+                            <span>
+                                INPUT_PORTAL
+                            </span>
+
+                            <span>
+                                READY
+                            </span>
+
+                        </div>
+
+
+                        <div class="window-body">
+
+                            <div>
+
+                                <div class="camera-symbol"></div>
+
+                                <p>
+                                    CAMERA / UPLOAD<br />
+                                    DROP A COMPONENT IMAGE HERE
+                                </p>
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </section>
+
+    </main>
+
+
+    <footer class="footer">
+
+        <div class="wrap footer-inner">
+
+            <span>
+                © 2026 ReCircuit
+            </span>
+
+            <span class="footer-accent">
+                Laptop component classification for a cleaner second life
+            </span>
 
         </div>
 
-    </div>
-
-</section>
-
-
-<!-- ================= COMPONENTS ================= -->
-
-<section id="components">
-
-    <div class="section-label">
-        E-WASTE COMPONENTS
-    </div>
-
-    <h2 class="section-title">
-        What Can Be Classified?
-    </h2>
-
-    <p class="section-description">
-        EcoSort focuses on common electronic and laptop
-        components that require different recycling methods.
-    </p>
-
-
-    <div class="component-grid">
-
-        <div class="component">
-
-            <div class="component-icon">▣</div>
-
-            <h3>RAM</h3>
-
-            <p>
-                Memory modules containing electronic
-                components and recoverable materials.
-            </p>
-
-        </div>
-
-
-        <div class="component">
-
-            <div class="component-icon">▰</div>
-
-            <h3>Battery</h3>
-
-            <p>
-                Rechargeable battery units requiring
-                safe and specialized handling.
-            </p>
-
-        </div>
-
-
-        <div class="component">
-
-            <div class="component-icon">◈</div>
-
-            <h3>Storage Device</h3>
-
-            <p>
-                Hard drives and solid-state storage
-                components containing recoverable materials.
-            </p>
-
-        </div>
-
-
-        <div class="component">
-
-            <div class="component-icon">◉</div>
-
-            <h3>Cooling Fan</h3>
-
-            <p>
-                Cooling assemblies containing plastic,
-                metal and electronic parts.
-            </p>
-
-        </div>
-
-
-        <div class="component">
-
-            <div class="component-icon">▱</div>
-
-            <h3>Display</h3>
-
-            <p>
-                Laptop display panels requiring
-                careful collection and processing.
-            </p>
-
-        </div>
-
-
-        <div class="component">
-
-            <div class="component-icon">⌘</div>
-
-            <h3>Motherboard</h3>
-
-            <p>
-                Circuit boards containing valuable
-                electronic and recoverable materials.
-            </p>
-
-        </div>
-
-
-        <div class="component">
-
-            <div class="component-icon">⌨</div>
-
-            <h3>Keyboard</h3>
-
-            <p>
-                Mixed plastic and electronic components
-                from laptop keyboards.
-            </p>
-
-        </div>
-
-
-        <div class="component">
-
-            <div class="component-icon">＋</div>
-
-            <h3>Other Components</h3>
-
-            <p>
-                Additional electronic parts supported
-                by the classification system.
-            </p>
-
-        </div>
-
-    </div>
-
-</section>
-
-
-<!-- ================= RECOMMENDATION ================= -->
-
-<section class="recommendation" id="recommendation">
-
-    <div class="section-label">
-        RECYCLING RECOMMENDATION
-    </div>
-
-    <h2 class="section-title">
-        Know What To Do With It.
-    </h2>
-
-
-    <div class="recommendation-box">
-
-        <div>
-
-            <h3>
-                Identify.<br>
-                Understand.<br>
-                Recycle.
-            </h3>
-
-            <p>
-                After identifying the electronic component,
-                EcoSort provides relevant handling and
-                recycling guidance. This helps users make
-                safer and more responsible e-waste disposal
-                decisions.
-            </p>
-
-        </div>
-
-
-        <div class="recycle">
-            ♻
-        </div>
-
-    </div>
-
-</section>
-
-
-<!-- ================= CTA ================= -->
-
-<section class="cta">
-
-    <div class="section-label">
-        READY TO START?
-    </div>
-
-    <h2>
-        Turn E-Waste<br>
-        Into A <span>Better Choice.</span>
-    </h2>
-
-    <p>
-        Upload an electronic component image and
-        discover its recommended recycling path.
-    </p>
-
-    <a href="classify.html" class="btn btn-primary">
-        Start Classification →
-    </a>
-
-</section>
-
-</main>
-
-
-<!-- ================= FOOTER ================= -->
-
-<footer>
-
-    <div>
-        © 2026 EcoSort
-    </div>
-
-    <div>
-        E-Waste Classification & Recycling Recommendation
-    </div>
-
-</footer>
-
+    </footer>
 
 </body>
 </html>
-```
