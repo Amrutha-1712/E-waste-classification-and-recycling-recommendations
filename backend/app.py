@@ -1,10 +1,17 @@
-from flask import Flask, request, jsonify, render_template, redirect, url_for, render_template_string  # type: ignore[import-not-found]
+from flask import Flask, request, jsonify, render_template, redirect, url_for, render_template_string, session # type: ignore[import-not-found]
 from flask_cors import CORS  # type: ignore[import-not-found]
 import json
 import os
+from datetime import timedelta
 
 app = Flask(__name__, template_folder='../frontend')
 CORS(app)  
+
+# Hardcoded secret key guarantees consistency across server hot-reloads
+app.secret_key = "e_waste_care_secure_session_key_2026" 
+
+# Forces the browser session cookie to remain active for 7 days across close/refresh events
+app.permanent_session_lifetime = timedelta(days=7)
 
 DATA_FILE = "users.json"
 
@@ -40,11 +47,6 @@ ERROR_TEMPLATE = """
         p { color: #4b5563; margin-bottom: 28px; line-height: 1.6; font-size: 16px; }
         .back-button { display: inline-block; background-color: #2e7d32; color: white; padding: 14px 28px; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 15px; width: 100%; transition: background-color 0.2s; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
         .back-button:hover { background-color: #1b5e20; }
-        @media (max-width: 480px) {
-            .error-container { padding: 30px 20px; }
-            h2 { font-size: 20px; }
-            p { font-size: 15px; }
-        }
     </style>
 </head>
 <body>
@@ -63,35 +65,65 @@ ERROR_TEMPLATE = """
 # ==========================================
 
 @app.route('/')
+@app.route('/index.html')
 def root_page():
-    return render_template('register.html')
+    """First landing home portal template."""
+    if 'user_email' in session:
+        return redirect(url_for('home_page'))
+    return render_template('index.html')
 
 @app.route('/register', methods=['GET'])
-@app.route('/register.html', methods=['GET'])  # Fixes the 404 navigation mismatch from the login link
+@app.route('/register.html', methods=['GET'])
 def register_page():
+    if 'user_email' in session:
+        return redirect(url_for('home_page'))
     return render_template('register.html')
 
 @app.route('/login', methods=['GET'])
 @app.route('/login.html', methods=['GET'])
 def login_page():
-    """Reads the static login page layout and injects a script to handle navigation routing."""
+    if 'user_email' in session:
+        return redirect(url_for('home_page'))
+        
     try:
         original_html = render_template('login.html')
         
+        # Intercepts form data submit, routes to /api/login, and saves cookie session state
         injected_controller = """
         <script>
         document.addEventListener("DOMContentLoaded", function() {
-            var forms = document.getElementsByTagName("form");
-            if(forms.length > 0) {
-                forms[0].addEventListener("submit", function(e) {
+            var targetForm = document.querySelector("form");
+            if(targetForm) {
+                targetForm.removeAttribute("action");
+                targetForm.removeAttribute("method");
+                
+                targetForm.addEventListener("submit", function(e) {
                     e.preventDefault();
-                    window.location.href = "/home";
-                });
-            }
-            var buttons = document.getElementsByTagName("button");
-            for(var i=0; i<buttons.length; i++) {
-                buttons[i].addEventListener("click", function(e) {
-                    window.location.href = "/home";
+                    
+                    var userBox = document.querySelector('input[type="text"], input[name="username"], input[name="email"], #username');
+                    var passBox = document.querySelector('input[type="password"], input[name="password"], #password');
+                    
+                    var payload = {
+                        username: userBox ? userBox.value : "User",
+                        password: passBox ? passBox.value : ""
+                    };
+                    
+                    fetch('/api/login', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    })
+                    .then(function(res) { return res.json(); })
+                    .then(function(data) {
+                        if (data.success || data.status === "success") {
+                            window.location.replace("/home");
+                        } else {
+                            alert(data.message || "Invalid account credentials entered.");
+                        }
+                    })
+                    .catch(function(err) {
+                        window.location.replace("/home");
+                    });
                 });
             }
         });
@@ -105,9 +137,24 @@ def login_page():
         return render_template('login.html')
 
 @app.route('/home', methods=['GET'])
-@app.route('/index.html', methods=['GET'])
 def home_page():
-    return render_template('index.html')
+    """Dashboard view panel. The session tracker keeps the user authorized."""
+    if 'user_email' not in session:
+        return redirect(url_for('login_page'))
+        
+    try:
+        return render_template('index.html', logged_in=True, username=session.get('user_username', 'User'))
+    except Exception:
+        return f"""
+        <html>
+        <body style="font-family:sans-serif; background:#e8f5e9; text-align:center; padding-top:100px;">
+            <h2>Logged In! Welcome to E-Waste Care Dashboard</h2>
+            <p>User account session: <b>{session.get('user_username', 'Active User')}</b></p>
+            <br>
+            <a href="/logout" style="background:#d32f2f; color:white; padding:10px 20px; text-decoration:none; border-radius:5px;">Logout Securely</a>
+        </body>
+        </html>
+        """
 
 # ==========================================
 #       ROBUST BACKEND PROCESSING LOGIC
@@ -124,7 +171,7 @@ def handle_register():
 
     if not username or not password or not email:
         if request.form or not request.is_json:
-            return render_template_string(ERROR_TEMPLATE, title="Registration Incomplete", message="All validation form fields are required.", back_url="/register")
+            return render_template_string(ERROR_TEMPLATE, title="Registration Incomplete", message="All validation fields are required.", back_url="/register")
         return jsonify({"success": False, "status": "error", "message": "All fields are required"}), 400
 
     users = load_users()
@@ -160,10 +207,6 @@ def handle_register():
 @app.route('/api/login', methods=['POST'])
 @app.route('/login', methods=['POST'])
 def handle_login():
-    """
-    Guarantees the frontend layout immediately receives authorization approval indicators 
-    and forces the application to load the user profile dashboard.
-    """
     users = load_users()
     json_data = request.get_json(silent=True) or {}
     
@@ -190,6 +233,11 @@ def handle_login():
                 recycled_val = u_data.get('items_recycled', 0)
                 break
 
+    # Persist session metrics inside active storage variables
+    session.permanent = True
+    session['user_email'] = email_val if email_val else username_val
+    session['user_username'] = username_val
+
     return jsonify({
         "success": True,
         "success_status": True,
@@ -205,6 +253,12 @@ def handle_login():
             "items_recycled": recycled_val
         }
     }), 200
+
+@app.route('/logout')
+def handle_logout():
+    """Clears user session storage entirely and resets application track state."""
+    session.clear()
+    return redirect(url_for('root_page'))
 
 if __name__ == '__main__':
     app.run(debug=True, port=5000)
