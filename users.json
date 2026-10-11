@@ -1,4 +1,9 @@
 {
- 
-   
+    "test@example.com": {
+        "username": "textuser",
+        "password": "123456",
+        "email": "test@example.com",
+        "items_recycled": 0,
+        "points": 0
+    }
 }
