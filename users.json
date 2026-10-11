@@ -1,8 +1,15 @@
 {
+<<<<<<< HEAD
     "amruthapk2k6@gmail.com": {
         "username": "apk",
         "password": "A34567",
         "email": "amruthapk2k6@gmail.com",
+=======
+    "test@example.com": {
+        "username": "textuser",
+        "password": "123456",
+        "email": "test@example.com",
+>>>>>>> 038036a265077eac3c90bfb57089e584e9345d7b
         "items_recycled": 0,
         "points": 0
     }
