@@ -67,6 +67,7 @@ def root_page():
     return render_template('register.html')
 
 @app.route('/register', methods=['GET'])
+@app.route('/register.html', methods=['GET'])  # Fixes the 404 navigation mismatch from the login link
 def register_page():
     return render_template('register.html')
 
@@ -75,10 +76,8 @@ def register_page():
 def login_page():
     """Reads the static login page layout and injects a script to handle navigation routing."""
     try:
-        # Load your original frontend layout code cleanly
         original_html = render_template('login.html')
         
-        # Inject an active backend sync controller right before the closing body tag
         injected_controller = """
         <script>
         document.addEventListener("DOMContentLoaded", function() {
@@ -86,7 +85,6 @@ def login_page():
             if(forms.length > 0) {
                 forms[0].addEventListener("submit", function(e) {
                     e.preventDefault();
-                    // Hard execution override: skip buggy frontend checking structures completely
                     window.location.href = "/home";
                 });
             }
@@ -140,13 +138,11 @@ def handle_register():
                 email_exists = True
                 break
 
-    # Strictly output "Email already registered" block for any duplicate input configurations
     if email_exists:
         if request.form or not request.is_json:
             return render_template_string(ERROR_TEMPLATE, title="Registration Conflict", message="Email/Username already registered.", back_url="/register")
         return jsonify({"success": False, "status": "error", "message": "Email already registered"}), 400
 
-    # Index metrics by email key string to guarantee absolute profile database uniqueness
     users[email] = {
         "username": username,
         "password": password, 
@@ -194,7 +190,6 @@ def handle_login():
                 recycled_val = u_data.get('items_recycled', 0)
                 break
 
-    # Package multiple valid tracking variants inside the response object to bypass validation loops
     return jsonify({
         "success": True,
         "success_status": True,
@@ -202,18 +197,14 @@ def handle_login():
         "error": False,
         "redirect": "/home",
         "url": "/home",
-        "message": "Welcome back!", 
-        "username": username_val,
-        "email": email_val,
-        "points": points_val,
-        "items_recycled": recycled_val,
+        "message": "Welcome back!",
         "user": {
             "username": username_val,
-            "email": email_val
+            "email": email_val,
+            "points": points_val,
+            "items_recycled": recycled_val
         }
     }), 200
 
 if __name__ == '__main__':
-    print("🚀 E-Waste server launching on http://127.0.0.1:5000")
     app.run(debug=True, port=5000)
-
