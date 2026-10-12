@@ -1,5 +1,7 @@
 from flask import Flask, request, jsonify, render_template, redirect, url_for, render_template_string, session # type: ignore[import-not-found]
 from flask_cors import CORS  # type: ignore[import-not-found]
+import base64
+import binascii
 import json
 import os
 from datetime import timedelta
@@ -14,6 +16,7 @@ app.secret_key = "e_waste_care_secure_session_key_2026"
 app.permanent_session_lifetime = timedelta(days=7)
 
 DATA_FILE = "users.json"
+MAX_PROFILE_PHOTO_SIZE = 2 * 1024 * 1024
 
 def load_users():
     if not os.path.exists(DATA_FILE):
@@ -27,6 +30,20 @@ def load_users():
 def save_users(users):
     with open(DATA_FILE, "w") as f:
         json.dump(users, f, indent=4)
+
+def get_session_user(users):
+    account_id = session.get('user_email')
+    if not account_id:
+        return None, None
+
+    if account_id in users:
+        return account_id, users[account_id]
+
+    for user_id, user_data in users.items():
+        if user_data.get('email') == account_id or user_data.get('username') == account_id:
+            return user_id, user_data
+
+    return None, None
 
 # ==========================================
 #      DYNAMIC RESPONSIVE ERROR TEMPLATE
@@ -149,6 +166,24 @@ def home_page():
             ''
         ).replace("document.getElementById('viewProfileLink').href = '/profile';", '')
         page = page.replace('<small>Full name</small>', '<small>Username</small>')
+        photo_controls = """
+        <input id="profilePhotoInput" type="file" accept="image/png,image/jpeg,image/webp" hidden>
+        <button class="button button-primary" id="profilePhotoSelect" type="button">Add profile picture</button>
+        <button class="button button-secondary" id="profilePhotoRemove" type="button" hidden>Remove picture</button>
+        <span id="profilePhotoStatus" role="status" aria-live="polite"></span>
+        """
+        page = page.replace(
+            '<a class="button button-secondary" id="logoutLink" href="/logout">Log out</a>',
+            photo_controls + '<a class="button button-secondary" id="logoutLink" href="/logout">Log out</a>',
+            1
+        )
+        page = page.replace(
+            "document.getElementById('profileEmail').textContent = email;",
+            """document.getElementById('profileEmail').textContent = email;
+                    const photo = document.getElementById('profilePhoto');
+                    if (user.profile_photo) photo.src = user.profile_photo;
+                    else photo.removeAttribute('src');"""
+        )
         responsive_styles = """
         <style>
             .navbar, .profile-menu { box-sizing: border-box; }
@@ -173,6 +208,90 @@ def home_page():
         </style>
         """
         page = page.replace('</head>', responsive_styles + '</head>', 1)
+        photo_script = """
+        <script>
+            (function () {
+                const input = document.getElementById('profilePhotoInput');
+                const selectButton = document.getElementById('profilePhotoSelect');
+                const removeButton = document.getElementById('profilePhotoRemove');
+                const photo = document.getElementById('profilePhoto');
+                const status = document.getElementById('profilePhotoStatus');
+                if (!input || !selectButton || !removeButton || !photo || !status) return;
+
+                function syncPhotoControls() {
+                    const hasPhoto = Boolean(photo.getAttribute('src'));
+                    selectButton.textContent = hasPhoto ? 'Update profile picture' : 'Add profile picture';
+                    removeButton.hidden = !hasPhoto;
+                }
+
+                selectButton.addEventListener('click', function () {
+                    input.click();
+                });
+
+                input.addEventListener('change', async function () {
+                    const file = input.files && input.files[0];
+                    if (!file) return;
+                    if (!['image/png', 'image/jpeg', 'image/webp'].includes(file.type)) {
+                        status.textContent = 'Choose a PNG, JPG, or WebP image.';
+                        input.value = '';
+                        return;
+                    }
+                    if (file.size > 2 * 1024 * 1024) {
+                        status.textContent = 'The image must be 2 MB or smaller.';
+                        input.value = '';
+                        return;
+                    }
+
+                    status.textContent = 'Uploading picture…';
+                    try {
+                        const imageData = await new Promise(function (resolve, reject) {
+                            const reader = new FileReader();
+                            reader.onload = function () { resolve(reader.result); };
+                            reader.onerror = function () { reject(new Error('Unable to read image')); };
+                            reader.readAsDataURL(file);
+                        });
+                        const response = await fetch('/api/profile/photo', {
+                            method: 'POST',
+                            credentials: 'same-origin',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ photo: imageData })
+                        });
+                        const result = await response.json();
+                        if (!response.ok) throw new Error(result.message || 'Unable to save picture.');
+                        photo.src = result.profile_photo;
+                        syncPhotoControls();
+                        status.textContent = 'Profile picture saved.';
+                    } catch (error) {
+                        console.error('Unable to save profile picture:', error);
+                        status.textContent = error.message || 'Unable to save picture.';
+                    } finally {
+                        input.value = '';
+                    }
+                });
+
+                removeButton.addEventListener('click', async function () {
+                    status.textContent = 'Removing picture…';
+                    try {
+                        const response = await fetch('/api/profile/photo', {
+                            method: 'DELETE',
+                            credentials: 'same-origin'
+                        });
+                        const result = await response.json();
+                        if (!response.ok) throw new Error(result.message || 'Unable to remove picture.');
+                        photo.removeAttribute('src');
+                        syncPhotoControls();
+                        status.textContent = 'Profile picture removed.';
+                    } catch (error) {
+                        console.error('Unable to remove profile picture:', error);
+                        status.textContent = error.message || 'Unable to remove picture.';
+                    }
+                });
+
+                syncPhotoControls();
+            }());
+        </script>
+        """
+        page = page.replace('</body>', photo_script + '</body>', 1)
         return page
     except Exception:
         return f"""
@@ -188,22 +307,8 @@ def home_page():
 
 @app.route('/api/profile', methods=['GET'])
 def get_profile():
-    account_id = session.get('user_email')
-    if not account_id:
-        return jsonify({"logged_in": False, "user": None}), 200
-
     users = load_users()
-    user_data = users.get(account_id)
-    if user_data is None:
-        user_data = next(
-            (
-                stored_user for stored_user in users.values()
-                if stored_user.get('email') == account_id
-                or stored_user.get('username') == account_id
-            ),
-            None
-        )
-
+    _, user_data = get_session_user(users)
     if user_data is None:
         return jsonify({"logged_in": False, "user": None}), 200
 
@@ -211,9 +316,63 @@ def get_profile():
         "logged_in": True,
         "user": {
             "username": user_data.get('username') or session.get('user_username', 'User'),
-            "email": user_data.get('email', '')
+            "email": user_data.get('email', ''),
+            "profile_photo": user_data.get('profile_photo')
         }
     }), 200
+
+@app.route('/api/profile/photo', methods=['POST', 'DELETE'])
+def update_profile_photo():
+    users = load_users()
+    user_id, user_data = get_session_user(users)
+    if user_data is None:
+        return jsonify({"success": False, "message": "You must be logged in to manage your profile picture."}), 401
+
+    if request.method == 'DELETE':
+        user_data.pop('profile_photo', None)
+        users[user_id] = user_data
+        save_users(users)
+        return jsonify({"success": True, "profile_photo": None}), 200
+
+    max_request_size = ((MAX_PROFILE_PHOTO_SIZE + 2) // 3) * 4 + 256
+    if request.content_length is not None and request.content_length > max_request_size:
+        return jsonify({"success": False, "message": "The image must be 2 MB or smaller."}), 413
+
+    payload = request.get_json(silent=True)
+    photo_data = payload.get('photo') if isinstance(payload, dict) else None
+    if not isinstance(photo_data, str) or ',' not in photo_data:
+        return jsonify({"success": False, "message": "A valid image is required."}), 400
+
+    header, encoded_image = photo_data.split(',', 1)
+    mime_types = {
+        'data:image/png;base64': ('image/png', lambda data: data.startswith(b'\x89PNG\r\n\x1a\n')),
+        'data:image/jpeg;base64': ('image/jpeg', lambda data: data.startswith(b'\xff\xd8\xff')),
+        'data:image/webp;base64': (
+            'image/webp',
+            lambda data: len(data) >= 12 and data[:4] == b'RIFF' and data[8:12] == b'WEBP'
+        )
+    }
+    image_type = mime_types.get(header.lower())
+    if image_type is None:
+        return jsonify({"success": False, "message": "Use a PNG, JPG, or WebP image."}), 400
+    if len(encoded_image) > ((MAX_PROFILE_PHOTO_SIZE + 2) // 3) * 4:
+        return jsonify({"success": False, "message": "The image must be 2 MB or smaller."}), 413
+
+    try:
+        image_bytes = base64.b64decode(encoded_image, validate=True)
+    except (binascii.Error, ValueError):
+        return jsonify({"success": False, "message": "The image data is invalid."}), 400
+
+    mime_type, matches_signature = image_type
+    if len(image_bytes) > MAX_PROFILE_PHOTO_SIZE:
+        return jsonify({"success": False, "message": "The image must be 2 MB or smaller."}), 413
+    if not matches_signature(image_bytes):
+        return jsonify({"success": False, "message": "The image contents do not match the selected format."}), 400
+
+    user_data['profile_photo'] = f"data:{mime_type};base64,{encoded_image}"
+    users[user_id] = user_data
+    save_users(users)
+    return jsonify({"success": True, "profile_photo": user_data['profile_photo']}), 200
 
 # ==========================================
 #       ROBUST BACKEND PROCESSING LOGIC
