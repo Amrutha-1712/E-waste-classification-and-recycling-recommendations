@@ -196,9 +196,7 @@
         .profile-menu h3 { margin-bottom: 7px; font-size: 19px; }
         .profile-menu p { color: var(--muted); font-size: 13px; line-height: 1.7; }
         .profile-menu .profile-actions { display: flex; gap: 9px; flex-wrap: wrap; margin-top: 16px; }
-        .profile-menu #registerLink {
-    color: #000 !important;
-}
+        .profile-menu #registerLink { color: #000 !important; }
         .profile-link-wrap { position: relative; }
         .profile-user { display: flex; align-items: center; gap: 13px; margin-bottom: 14px; }
         .profile-avatar { width: 58px; height: 58px; flex: 0 0 58px; object-fit: cover; border-radius: 50%; border: 2px solid var(--green); background: #18251a; }
@@ -432,28 +430,66 @@
         const signedInProfile = document.getElementById("signedInProfile");
         const profileError = document.getElementById("profileError");
 
-        // The current backend does not provide a profile/session endpoint.
-        // Show Register and Log in without making a request to a missing API.
-        profileLoading.hidden = true;
-        guestProfile.hidden = false;
-        signedInProfile.hidden = true;
-        profileError.hidden = true;
+        async function loadProfile() {
+            profileLoading.hidden = false;
+            guestProfile.hidden = true;
+            signedInProfile.hidden = true;
+            profileError.hidden = true;
+            try {
+                const response = await fetch('/api/profile', {
+                    method: 'GET',
+                    credentials: 'same-origin',
+                    cache: 'no-store'
+                });
+                if (!response.ok) throw new Error('Profile request failed');
+                const data = await response.json();
+                profileLoading.hidden = true;
 
-        document.getElementById("registerLink").href = "/register";
-        document.getElementById("loginLink").href = "/login";
+                if (data.logged_in && data.user) {
+                    const user = data.user;
+                    const name = user.username || 'User';
+                    const email = user.email || '';
+                    document.getElementById('profileName').textContent = name;
+                    document.getElementById('profileEmail').textContent = email;
+                    document.getElementById('detailName').textContent = name;
+                    document.getElementById('detailEmail').textContent = email;
+                    signedInProfile.hidden = false;
+                    guestProfile.hidden = true;
+                } else {
+                    signedInProfile.hidden = true;
+                    guestProfile.hidden = false;
+                }
+            } catch (error) {
+                console.error('Unable to load CircuitCycle profile:', error);
+                profileLoading.hidden = true;
+                signedInProfile.hidden = true;
+                guestProfile.hidden = false;
+                profileError.hidden = true;
+            }
+        }
 
-        profileToggle.addEventListener("click", function (event) {
+        profileToggle.addEventListener('click', function (event) {
             event.preventDefault();
-            const isOpen = profileMenu.classList.toggle("open");
-            profileToggle.setAttribute("aria-expanded", String(isOpen));
+            const isOpen = profileMenu.classList.toggle('open');
+            profileToggle.setAttribute('aria-expanded', String(isOpen));
+            if (isOpen) loadProfile();
         });
 
-        document.addEventListener("click", function (event) {
-            if (!event.target.closest(".profile-link-wrap")) {
-                profileMenu.classList.remove("open");
-                profileToggle.setAttribute("aria-expanded", "false");
+        document.addEventListener('click', function (event) {
+            if (!event.target.closest('.profile-link-wrap')) {
+                profileMenu.classList.remove('open');
+                profileToggle.setAttribute('aria-expanded', 'false');
             }
         });
+
+        document.getElementById('registerLink').href = '/register';
+        document.getElementById('loginLink').href = '/login';
+        document.getElementById('viewProfileLink').href = '/profile';
+        document.getElementById('logoutLink').href = '/logout';
+        document.getElementById('retryProfile').addEventListener('click', loadProfile);
+
+        // Read the session when the homepage loads, not only when Profile is clicked.
+        loadProfile();
     </script>
 </body>
 </html>
