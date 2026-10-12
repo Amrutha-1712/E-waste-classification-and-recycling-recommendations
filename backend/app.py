@@ -143,7 +143,37 @@ def home_page():
         return redirect(url_for('login_page'))
         
     try:
-        return render_template('index.html', logged_in=True, username=session.get('user_username', 'User'))
+        page = render_template('index.html', logged_in=True, username=session.get('user_username', 'User'))
+        page = page.replace(
+            '<a class="button button-primary" id="viewProfileLink" href="/profile">View Profile</a>',
+            ''
+        ).replace("document.getElementById('viewProfileLink').href = '/profile';", '')
+        page = page.replace('<small>Full name</small>', '<small>Username</small>')
+        responsive_styles = """
+        <style>
+            .navbar, .profile-menu { box-sizing: border-box; }
+            .profile-menu {
+                max-width: calc(100vw - 24px);
+                max-height: calc(100vh - 100px);
+                overflow-y: auto;
+            }
+            @media (max-width: 900px) {
+                .navbar { width: calc(100% - 24px); gap: 12px; }
+                .nav-links { gap: clamp(8px, 1.5vw, 16px); }
+            }
+            @media (max-width: 700px) {
+                .navbar { width: calc(100% - 16px); top: 8px; gap: 8px; }
+                .nav-links { gap: 8px; }
+                .profile-menu {
+                    right: 0;
+                    width: min(340px, calc(100vw - 16px));
+                    max-height: calc(100vh - 82px);
+                }
+            }
+        </style>
+        """
+        page = page.replace('</head>', responsive_styles + '</head>', 1)
+        return page
     except Exception:
         return f"""
         <html>
