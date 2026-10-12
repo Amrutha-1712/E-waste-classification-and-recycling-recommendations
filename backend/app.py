@@ -156,6 +156,35 @@ def home_page():
         </html>
         """
 
+@app.route('/api/profile', methods=['GET'])
+def get_profile():
+    account_id = session.get('user_email')
+    if not account_id:
+        return jsonify({"logged_in": False, "user": None}), 200
+
+    users = load_users()
+    user_data = users.get(account_id)
+    if user_data is None:
+        user_data = next(
+            (
+                stored_user for stored_user in users.values()
+                if stored_user.get('email') == account_id
+                or stored_user.get('username') == account_id
+            ),
+            None
+        )
+
+    if user_data is None:
+        return jsonify({"logged_in": False, "user": None}), 200
+
+    return jsonify({
+        "logged_in": True,
+        "user": {
+            "username": user_data.get('username') or session.get('user_username', 'User'),
+            "email": user_data.get('email', '')
+        }
+    }), 200
+
 # ==========================================
 #       ROBUST BACKEND PROCESSING LOGIC
 # ==========================================
