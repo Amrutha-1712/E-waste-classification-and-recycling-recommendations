@@ -1,13 +1,22 @@
-HTML
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-    <title>E-Waste Care | Register</title>
+    <meta name="theme-color" content="#080d0a">
+    <title>CircuitCycle | Create Account</title>
 
     <style>
+        :root {
+            --bg: #080d0a;
+            --green: #a8ff78;
+            --bright: #78f29a;
+            --pale: #d7ffb8;
+            --white: #f5fff5;
+            --muted: #a6b8aa;
+            --line: rgba(168,255,120,.25);
+        }
+
         * {
             margin: 0;
             padding: 0;
@@ -15,438 +24,754 @@ HTML
             font-family: "Segoe UI", Arial, sans-serif;
         }
 
+        html { scroll-behavior: smooth; }
+
         body {
             min-height: 100vh;
             display: flex;
             justify-content: center;
             align-items: center;
-
-            background:
-                radial-gradient(circle at 10% 20%, #34d399 0%, transparent 25%),
-                radial-gradient(circle at 90% 80%, #059669 0%, transparent 30%),
-                linear-gradient(135deg, #022c22, #064e3b, #10b981);
-
-            padding: 20px;
-            overflow: auto;
+            padding: 100px 20px 40px;
+            color: var(--white);
+            background: var(--bg);
+            overflow-x: hidden;
         }
 
-        body::before {
+        a { text-decoration: none; color: inherit; }
+
+        button, input { font: inherit; }
+
+        /* Animated background */
+
+        .background {
+            position: fixed;
+            inset: 0;
+            z-index: -2;
+            overflow: hidden;
+            background:
+                radial-gradient(circle at 15% 15%, #183522 0, transparent 30%),
+                radial-gradient(circle at 90% 85%, #123b25 0, transparent 35%),
+                #080d0a;
+        }
+
+        .background::before {
             content: "";
             position: absolute;
-            width: 350px;
-            height: 350px;
+            inset: -100%;
+            opacity: .32;
+            background-image:
+                linear-gradient(rgba(168,255,120,.06) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(168,255,120,.06) 1px, transparent 1px);
+            background-size: 55px 55px;
+            animation: gridMove 25s linear infinite;
+        }
+
+        @keyframes gridMove {
+            to { transform: translate(55px, 55px); }
+        }
+
+        .orb {
+            position: absolute;
+            width: 340px;
+            height: 340px;
             border-radius: 50%;
-            background: rgba(255,255,255,0.06);
+            filter: blur(100px);
+            opacity: .2;
+            pointer-events: none;
+        }
+
+        .orb-one {
+            background: var(--green);
             top: -150px;
             left: -100px;
-            pointer-events: none;
+            animation: floatOne 10s ease-in-out infinite alternate;
         }
 
-        body::after {
-            content: "";
+        .orb-two {
+            background: #00ffa3;
+            right: -130px;
+            bottom: -140px;
+            animation: floatTwo 12s ease-in-out infinite alternate;
+        }
+
+        @keyframes floatOne {
+            to { transform: translate(180px, 140px) scale(1.2); }
+        }
+
+        @keyframes floatTwo {
+            to { transform: translate(-140px, -120px) scale(1.15); }
+        }
+
+        .particles span {
+            position: absolute;
+            width: 4px;
+            height: 4px;
+            border-radius: 50%;
+            background: var(--green);
+            box-shadow: 0 0 14px var(--green);
+            animation: particleFloat 6s ease-in-out infinite;
+        }
+
+        .particles span:nth-child(1) { top: 15%; left: 12%; }
+        .particles span:nth-child(2) { top: 25%; right: 18%; animation-delay: -2s; }
+        .particles span:nth-child(3) { top: 65%; left: 9%; animation-delay: -3s; }
+        .particles span:nth-child(4) { top: 78%; right: 12%; animation-delay: -1s; }
+        .particles span:nth-child(5) { top: 48%; left: 48%; animation-delay: -4s; }
+        .particles span:nth-child(6) { top: 10%; right: 43%; animation-delay: -2.5s; }
+
+        @keyframes particleFloat {
+            50% { opacity: .2; transform: translateY(-25px) scale(.6); }
+        }
+
+        .circuit {
             position: absolute;
             width: 300px;
-            height: 300px;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, var(--green), transparent);
+            opacity: .5;
+        }
+
+        .circuit::after {
+            content: "";
+            position: absolute;
+            top: -3px;
+            width: 7px;
+            height: 7px;
             border-radius: 50%;
-            background: rgba(255,255,255,0.05);
-            bottom: -120px;
-            right: -80px;
+            background: var(--green);
+            box-shadow: 0 0 14px var(--green);
+            animation: circuitRun 3s linear infinite;
+        }
+
+        .circuit-one { top: 28%; left: -70px; transform: rotate(25deg); }
+        .circuit-two { bottom: 25%; right: -60px; transform: rotate(-25deg); }
+
+        @keyframes circuitRun {
+            from { left: 0; opacity: 0; }
+            40%, 70% { opacity: 1; }
+            to { left: 100%; opacity: 0; }
+        }
+
+        /* Navigation */
+
+        .navbar {
+            position: absolute;
+            top: 18px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: min(1100px, 94%);
+            padding: 12px 18px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 15px;
+            border: 1px solid var(--line);
+            border-radius: 15px;
+            background: rgba(8,15,10,.85);
+            backdrop-filter: blur(18px);
+            box-shadow: 0 10px 40px rgba(0,0,0,.25);
+            animation: slideDown .8s ease both;
+        }
+
+        @keyframes slideDown {
+            from { opacity: 0; transform: translate(-50%, -20px); }
+            to { opacity: 1; transform: translate(-50%, 0); }
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 20px;
+            font-weight: 800;
+            white-space: nowrap;
+        }
+
+        .brand-mark {
+            width: 38px;
+            height: 38px;
+            display: grid;
+            place-items: center;
+            border: 1px solid var(--green);
+            border-radius: 10px;
+            color: var(--green);
+            font-size: 25px;
+            animation: logoPulse 3s ease-in-out infinite;
+        }
+
+        .brand-name span { color: var(--green); }
+
+        @keyframes logoPulse {
+            50% { box-shadow: 0 0 25px rgba(168,255,120,.35); }
+        }
+
+        .back-link {
+            color: var(--muted);
+            font-size: 13px;
+            transition: .3s;
+        }
+
+        .back-link:hover { color: var(--green); }
+
+        /* Main registration card */
+
+        .register-container {
+            width: min(1000px, 100%);
+            min-height: 610px;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            overflow: hidden;
+            border: 1px solid var(--line);
+            border-radius: 24px;
+            background: rgba(15,25,18,.84);
+            backdrop-filter: blur(20px);
+            box-shadow: 0 30px 100px rgba(0,0,0,.48);
+            animation: cardAppear 1s .15s ease both;
+        }
+
+        @keyframes cardAppear {
+            from { opacity: 0; transform: translateY(35px) scale(.98); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+
+        /* Welcome panel */
+
+        .welcome-section {
+            position: relative;
+            overflow: hidden;
+            padding: 45px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            background:
+                radial-gradient(circle at 50% 45%, rgba(168,255,120,.13), transparent 48%),
+                linear-gradient(145deg, rgba(168,255,120,.07), rgba(255,255,255,.01));
+            border-right: 1px solid rgba(168,255,120,.13);
+        }
+
+        .welcome-section::before {
+            content: "";
+            position: absolute;
+            inset: 15px;
+            border: 1px solid rgba(168,255,120,.09);
+            border-radius: 15px;
             pointer-events: none;
         }
 
-        .register-container {
+        .welcome-content {
             position: relative;
             z-index: 2;
-            width: 950px;
-            min-height: 620px;
-            display: flex;
-
-            background: rgba(255,255,255,0.12);
-            border: 1px solid rgba(255,255,255,0.25);
-            border-radius: 30px;
-            backdrop-filter: blur(20px);
-            box-shadow: 0 30px 80px rgba(0,0,0,0.35);
-            overflow: hidden;
         }
 
-        /* Welcome section */
-
-        .welcome-section {
-            width: 50%;
-            padding: 50px;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
+        .welcome-badge {
+            display: inline-flex;
             align-items: center;
-            text-align: center;
-            color: white;
-
-            background: linear-gradient(
-                135deg,
-                rgba(6,78,59,0.8),
-                rgba(16,185,129,0.35)
-            );
+            gap: 8px;
+            margin-bottom: 26px;
+            padding: 8px 12px;
+            color: var(--bright);
+            font-size: 10px;
+            font-weight: 800;
+            letter-spacing: 1.7px;
+            border: 1px solid var(--line);
+            border-radius: 5px;
+            background: rgba(168,255,120,.05);
         }
 
-        .logo {
-            width: 110px;
-            height: 110px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
+        .welcome-badge::before {
+            content: "";
+            width: 7px;
+            height: 7px;
             border-radius: 50%;
-            background: rgba(255,255,255,0.15);
-            font-size: 65px;
-            margin-bottom: 25px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            background: var(--bright);
+            box-shadow: 0 0 12px var(--bright);
+            animation: blink 1.5s infinite;
+        }
+
+        @keyframes blink {
+            50% { opacity: .25; transform: scale(.6); }
+        }
+
+        .logo-circle {
+            width: 112px;
+            height: 112px;
+            margin: 0 auto 25px;
+            display: grid;
+            place-items: center;
+            border: 1px solid var(--green);
+            border-radius: 50%;
+            color: var(--green);
+            font-size: 58px;
+            background: rgba(168,255,120,.06);
+            box-shadow: 0 0 35px rgba(168,255,120,.13), inset 0 0 25px rgba(168,255,120,.06);
+            animation: logoFloat 4s ease-in-out infinite;
+        }
+
+        @keyframes logoFloat {
+            50% { transform: translateY(-10px) rotate(5deg); box-shadow: 0 0 48px rgba(168,255,120,.25); }
         }
 
         .welcome-section h1 {
-            font-size: 40px;
-            margin-bottom: 15px;
+            margin-bottom: 17px;
+            font-size: clamp(32px, 4vw, 46px);
+            line-height: 1.1;
+            letter-spacing: -1.8px;
         }
 
-        .welcome-section h1 span {
-            color: #86efac;
-        }
+        .welcome-section h1 span { color: var(--green); }
 
         .welcome-section p {
             max-width: 360px;
-            color: #d1fae5;
-            line-height: 1.8;
-            font-size: 16px;
-        }
-
-        .eco-text {
-            margin-top: 35px;
-            padding: 10px 20px;
-            border-radius: 30px;
-            background: rgba(255,255,255,0.1);
-            color: #bbf7d0;
+            color: var(--muted);
             font-size: 14px;
+            line-height: 1.9;
         }
 
-        /* Registration form */
+        .eco-badge {
+            margin-top: 27px;
+            padding: 11px 17px;
+            display: inline-block;
+            color: var(--green-pale);
+            font-size: 12px;
+            border: 1px solid var(--line);
+            border-radius: 8px;
+            background: rgba(168,255,120,.045);
+            animation: badgeGlow 3s ease-in-out infinite;
+        }
+
+        @keyframes badgeGlow {
+            50% { box-shadow: 0 0 20px rgba(168,255,120,.12); }
+        }
+
+        .welcome-decoration {
+            position: absolute;
+            width: 210px;
+            height: 210px;
+            right: -115px;
+            bottom: -115px;
+            border: 1px solid rgba(168,255,120,.16);
+            border-radius: 50%;
+            box-shadow: 0 0 0 25px rgba(168,255,120,.025),
+                        0 0 0 50px rgba(168,255,120,.02);
+        }
+
+        /* Form panel */
 
         .form-section {
-            width: 50%;
-            padding: 35px 50px;
-            background: rgba(255,255,255,0.97);
+            padding: 42px;
+            background: rgba(9,16,11,.7);
         }
 
-        .form-section h2 {
-            font-size: 32px;
-            color: #111827;
-            margin-bottom: 8px;
+        .form-header { margin-bottom: 22px; }
+
+        .form-header .eyebrow {
+            color: var(--green);
+            font-size: 10px;
+            font-weight: 800;
+            letter-spacing: 2px;
+        }
+
+        .form-header h2 {
+            margin: 8px 0;
+            font-size: 34px;
+            letter-spacing: -1px;
         }
 
         .subtitle {
-            color: #6b7280;
-            font-size: 14px;
-            margin-bottom: 20px;
+            color: var(--muted);
+            font-size: 13px;
         }
 
-        /* Google button */
+        /* Google sign-up */
 
         .google-btn {
             width: 100%;
-            padding: 13px;
+            min-height: 47px;
             display: flex;
-            justify-content: center;
             align-items: center;
-            gap: 12px;
-
-            background: #ffffff;
-            border: 1px solid #d1d5db;
-            border-radius: 12px;
-
-            color: #374151;
-            font-size: 15px;
-            font-weight: 600;
-            text-decoration: none;
+            justify-content: center;
+            gap: 11px;
+            padding: 12px;
+            color: #e9f2ea;
+            font-size: 13px;
+            font-weight: 700;
+            border: 1px solid rgba(255,255,255,.18);
+            border-radius: 9px;
+            background: rgba(255,255,255,.045);
             cursor: pointer;
-
-            transition: 0.3s;
+            transition: .3s;
         }
 
         .google-btn:hover {
-            background: #f9fafb;
-            border-color: #9ca3af;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            border-color: var(--green);
+            background: rgba(168,255,120,.07);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(168,255,120,.08);
         }
 
-        .google-icon {
-            width: 20px;
-            height: 20px;
-            flex-shrink: 0;
-        }
-
-        /* OR divider */
+        .google-icon { width: 19px; height: 19px; flex-shrink: 0; }
 
         .divider {
             display: flex;
             align-items: center;
-            gap: 12px;
+            gap: 13px;
             margin: 20px 0;
-            color: #9ca3af;
-            font-size: 13px;
+            color: #849587;
+            font-size: 11px;
         }
 
-        .divider::before,
-        .divider::after {
+        .divider::before, .divider::after {
             content: "";
             flex: 1;
             height: 1px;
-            background: #e5e7eb;
+            background: rgba(168,255,120,.14);
         }
 
-        .input-box {
-            margin-bottom: 14px;
-        }
+        /* Input fields */
+
+        .input-box { margin-bottom: 15px; }
 
         .input-box label {
             display: block;
-            color: #374151;
-            font-size: 14px;
-            font-weight: 600;
             margin-bottom: 7px;
+            color: #d8e8da;
+            font-size: 12px;
+            font-weight: 700;
         }
 
-        .input-box input {
+        .input-wrap { position: relative; }
+
+        .input-wrap input {
             width: 100%;
-            padding: 12px 15px;
-            border: 1px solid #d1d5db;
-            border-radius: 12px;
+            height: 46px;
+            padding: 0 14px;
+            color: var(--white);
+            font-size: 13px;
+            border: 1px solid rgba(168,255,120,.16);
+            border-radius: 8px;
             outline: none;
-            font-size: 15px;
-            background: #f9fafb;
-            transition: 0.3s;
+            background: rgba(255,255,255,.035);
+            transition: border-color .3s, box-shadow .3s, background .3s;
         }
 
-        .input-box input:focus {
-            border-color: #10b981;
-            background: white;
-            box-shadow: 0 0 0 4px rgba(16,185,129,0.12);
+        .input-wrap input::placeholder { color: #718274; }
+
+        .input-wrap input:hover { border-color: rgba(168,255,120,.4); }
+
+        .input-wrap input:focus {
+            border-color: var(--green);
+            background: rgba(168,255,120,.035);
+            box-shadow: 0 0 0 3px rgba(168,255,120,.09),
+                        0 0 18px rgba(168,255,120,.04);
+        }
+
+        .input-wrap input:focus-visible {
+            outline: 1px solid transparent;
         }
 
         .register-btn {
+            position: relative;
             width: 100%;
-            padding: 14px;
+            min-height: 49px;
             margin-top: 5px;
-            border: none;
-            border-radius: 12px;
-            color: white;
-            font-size: 16px;
-            font-weight: bold;
+            overflow: hidden;
+            color: #101a0c;
+            font-size: 14px;
+            font-weight: 800;
+            border: 1px solid var(--green);
+            border-radius: 9px;
+            background: linear-gradient(110deg, #a8ff78, #78f29a, #d7ffb8);
+            background-size: 200% 100%;
+            box-shadow: 0 8px 25px rgba(168,255,120,.13);
             cursor: pointer;
-
-            background: linear-gradient(135deg, #059669, #10b981);
-            box-shadow: 0 8px 20px rgba(5,150,105,0.25);
-            transition: 0.3s;
+            transition: .3s;
+            animation: buttonShimmer 5s ease infinite;
         }
 
+        @keyframes buttonShimmer {
+            0%, 100% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+        }
+
+        .register-btn::before {
+            content: "";
+            position: absolute;
+            top: -50%;
+            left: -70%;
+            width: 45%;
+            height: 200%;
+            transform: rotate(25deg);
+            background: rgba(255,255,255,.4);
+            transition: left .55s ease;
+        }
+
+        .register-btn:hover::before { left: 130%; }
+
         .register-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 12px 25px rgba(5,150,105,0.35);
+            transform: translateY(-3px);
+            box-shadow: 0 12px 32px rgba(168,255,120,.25);
+        }
+
+        .register-btn:active { transform: scale(.985); }
+
+        .message {
+            display: none;
+            margin-top: 12px;
+            padding: 10px;
+            color: #ffd0d0;
+            font-size: 12px;
+            border: 1px solid rgba(255,100,100,.25);
+            border-radius: 7px;
+            background: rgba(255,70,70,.06);
+        }
+
+        .message.success {
+            color: var(--green-pale);
+            border-color: var(--line);
+            background: rgba(168,255,120,.06);
         }
 
         .login-text {
+            margin-top: 20px;
+            color: var(--muted);
             text-align: center;
-            margin-top: 18px;
-            font-size: 14px;
-            color: #6b7280;
+            font-size: 12px;
         }
 
         .login-text a {
-            color: #059669;
-            font-weight: bold;
-            text-decoration: none;
+            color: var(--green);
+            font-weight: 800;
+            transition: .3s;
         }
 
-        .login-text a:hover {
-            text-decoration: underline;
+        .login-text a:hover { text-shadow: 0 0 12px var(--green); }
+
+        .security-note {
+            margin-top: 17px;
+            color: #738576;
+            text-align: center;
+            font-size: 10px;
         }
+
+        /* Responsive */
 
         @media (max-width: 800px) {
             .register-container {
-                width: 100%;
-                max-width: 500px;
-                flex-direction: column;
-            }
-
-            .welcome-section,
-            .form-section {
-                width: 100%;
+                max-width: 510px;
+                grid-template-columns: 1fr;
             }
 
             .welcome-section {
                 padding: 35px 25px;
+                border-right: none;
+                border-bottom: 1px solid rgba(168,255,120,.13);
             }
 
-            .form-section {
-                padding: 35px 25px;
+            .logo-circle {
+                width: 82px;
+                height: 82px;
+                margin-bottom: 18px;
+                font-size: 43px;
             }
 
-            .welcome-section h1 {
-                font-size: 30px;
-            }
+            .welcome-badge { margin-bottom: 18px; }
+            .welcome-section h1 { font-size: 35px; }
+            .welcome-section p { font-size: 13px; }
+            .eco-badge { margin-top: 17px; }
+            .form-section { padding: 32px; }
+        }
 
-            .logo {
-                width: 85px;
-                height: 85px;
-                font-size: 50px;
+        @media (max-width: 480px) {
+            body { padding: 85px 13px 25px; }
+            .navbar { top: 12px; padding: 9px 11px; }
+            .brand { font-size: 16px; }
+            .brand-mark { width: 32px; height: 32px; font-size: 21px; }
+            .back-link { font-size: 11px; }
+            .register-container { border-radius: 16px; }
+            .welcome-section { padding: 30px 20px; }
+            .form-section { padding: 27px 20px; }
+            .form-header h2 { font-size: 29px; }
+            .input-box { margin-bottom: 13px; }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after {
+                animation-duration: .01ms !important;
+                animation-iteration-count: 1 !important;
+                scroll-behavior: auto !important;
+                transition-duration: .01ms !important;
             }
         }
     </style>
 </head>
 
 <body>
-
-    <div class="register-container">
-
-        <!-- Welcome section -->
-
-        <div class="welcome-section">
-            <div class="logo">♻️</div>
-
-            <h1>E-Waste <span>Care</span></h1>
-
-            <p>
-                Join our smart E-Waste Classification
-                and Recycling Recommendation System.
-            </p>
-
-            <div class="eco-text">
-                🌱 Make the Earth Greener
-            </div>
+    <div class="background" aria-hidden="true">
+        <div class="orb orb-one"></div>
+        <div class="orb orb-two"></div>
+        <div class="particles">
+            <span></span><span></span><span></span>
+            <span></span><span></span><span></span>
         </div>
+        <div class="circuit circuit-one"></div>
+        <div class="circuit circuit-two"></div>
+    </div>
 
-        <!-- Registration section -->
+    <header class="navbar">
+        <a href="index.html" class="brand">
+            <span class="brand-mark">⌁</span>
+            <span class="brand-name"><span>Circuit</span>Cycle</span>
+        </a>
+        <a href="index.html" class="back-link">← Back to Home</a>
+    </header>
 
-        <div class="form-section">
+    <main class="register-container">
 
-            <h2>Create Account</h2>
+        <section class="welcome-section">
+            <div class="welcome-content">
+                <div class="welcome-badge">JOIN THE ECO MOVEMENT</div>
 
-            <p class="subtitle">
-                Register to start using the E-Waste system.
-            </p>
+                <div class="logo-circle">♻</div>
 
-            <!-- Google sign-up button -->
-            <!-- Replace /auth/google with your backend OAuth route -->
+                <h1>Welcome to<br><span>CircuitCycle</span></h1>
+
+                <p>
+                    Create your account and explore smarter laptop
+                    component identification, electronic waste
+                    classification, and responsible recycling.
+                </p>
+
+                <div class="eco-badge">🌱 Every Component Has a Second Chance</div>
+            </div>
+            <div class="welcome-decoration" aria-hidden="true"></div>
+        </section>
+
+        <section class="form-section">
+            <div class="form-header">
+                <div class="eyebrow">YOUR ECO JOURNEY STARTS HERE</div>
+                <h2>Create Account</h2>
+                <p class="subtitle">Register to start using the CircuitCycle system.</p>
+            </div>
 
             <a href="/auth/google" class="google-btn">
-
-                <svg class="google-icon"
-                     xmlns="http://www.w3.org/2000/svg"
-                     viewBox="0 0 48 48"
-                     aria-hidden="true">
-                    <path fill="#EA4335"
-                          d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0
-                          14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"
-                          transform="translate(0 4)"/>
-                    <path fill="#4285F4"
-                          d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94
-                          c-.58 2.96-2.26 5.48-4.74 7.18l7.72 5.99
-                          c4.51-4.16 7.06-10.3 7.06-17.64z"/>
-                    <path fill="#FBBC05"
-                          d="M10.53 28.59A14.4 14.4 0 0 1 9.75 24
-                          c0-1.59.27-3.13.76-4.59l-7.98-6.19
-                          A23.9 23.9 0 0 0 0 24c0 3.87.93 7.52 2.56 10.78z"
-                          transform="translate(0 4)"/>
-                    <path fill="#34A853"
-                          d="M24 48c6.48 0 11.93-2.13 15.91-5.81l-7.72-5.99
-                          c-2.14 1.45-4.89 2.3-8.19 2.3
-                          -6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19
-                          C6.51 42.62 14.62 48 24 48z"/>
+                <svg class="google-icon" xmlns="http://www.w3.org/2000/svg"
+                     viewBox="0 0 48 48" aria-hidden="true">
+                    <path fill="#EA4335" d="M24 9.5c3.5 0 6.7 1.2 9.2 3.6l6.8-6.8C35.9 2.4 30.5 0 24 0 14.6 0 6.5 5.4 2.6 13.2l8 6.2C12.4 13.7 17.7 9.5 24 9.5z" transform="translate(0 4)"/>
+                    <path fill="#4285F4" d="M47 24.5c0-1.6-.2-3.1-.4-4.5H24v9h12.9c-.6 3-2.3 5.5-4.7 7.2l7.7 6C44.4 38 47 31.8 47 24.5z"/>
+                    <path fill="#FBBC05" d="M10.5 28.6A14.4 14.4 0 0 1 9.8 24c0-1.6.2-3.1.7-4.6l-8-6.2A23.9 23.9 0 0 0 0 24c0 3.9.9 7.5 2.6 10.8z" transform="translate(0 4)"/>
+                    <path fill="#34A853" d="M24 48c6.5 0 11.9-2.1 15.9-5.8l-7.7-6c-2.1 1.5-4.9 2.3-8.2 2.3-6.3 0-11.6-4.2-13.5-9.9l-8 6.2C6.5 42.6 14.6 48 24 48z"/>
                 </svg>
-
-                Sign up with Google
+                Continue with Google
             </a>
 
-            <div class="divider">OR</div>
+            <div class="divider">OR REGISTER WITH EMAIL</div>
 
-            <form action="/register"
-                  method="POST"
-                  onsubmit="return validateForm()">
-
+            <form id="registerForm" action="/register" method="POST">
                 <div class="input-box">
                     <label for="username">Username</label>
-                    <input
-                        type="text"
-                        id="username"
-                        name="username"
-                        placeholder="Create a username"
-                        autocomplete="username"
-                        required>
+                    <div class="input-wrap">
+                        <input type="text" id="username" name="username"
+                               placeholder="Choose a username"
+                               autocomplete="username"
+                               minlength="3" required>
+                    </div>
                 </div>
 
                 <div class="input-box">
                     <label for="email">Email Address</label>
-                    <input
-                        type="email"
-                        id="email"
-                        name="email"
-                        placeholder="Enter your email"
-                        autocomplete="email"
-                        required>
+                    <div class="input-wrap">
+                        <input type="email" id="email" name="email"
+                               placeholder="Enter your email address"
+                               autocomplete="email" required>
+                    </div>
                 </div>
 
                 <div class="input-box">
                     <label for="password">Password</label>
-                    <input
-                        type="password"
-                        id="password"
-                        name="password"
-                        placeholder="Create a password"
-                        minlength="6"
-                        autocomplete="new-password"
-                        required>
+                    <div class="input-wrap">
+                        <input type="password" id="password" name="password"
+                               placeholder="Create a strong password"
+                               minlength="6" autocomplete="new-password"
+                               required>
+                    </div>
                 </div>
 
                 <div class="input-box">
-                    <label for="confirmPassword">
-                        Confirm Password
-                    </label>
-                    <input
-                        type="password"
-                        id="confirmPassword"
-                        name="confirm_password"
-                        placeholder="Confirm your password"
-                        minlength="6"
-                        autocomplete="new-password"
-                        required>
+                    <label for="confirmPassword">Confirm Password</label>
+                    <div class="input-wrap">
+                        <input type="password" id="confirmPassword"
+                               name="confirm_password"
+                               placeholder="Re-enter your password"
+                               minlength="6" autocomplete="new-password"
+                               required>
+                    </div>
                 </div>
 
                 <button type="submit" class="register-btn">
-                    Create Account
+                    Create My Account &nbsp; →
                 </button>
 
+                <div id="formMessage" class="message" role="alert"></div>
             </form>
 
-            <div class="login-text">
+            <p class="login-text">
                 Already have an account?
-                <a href="login.html">Login Here</a>
-            </div>
+                <a href="/login">Log in here</a>
+            </p>
 
-        </div>
-    </div>
+            <p class="security-note">♢ Your account details are submitted securely to the server.</p>
+        </section>
+
+    </main>
 
     <script>
-        function validateForm() {
-            const password =
-                document.getElementById("password").value;
+        const form = document.getElementById("registerForm");
+        const password = document.getElementById("password");
+        const confirmPassword = document.getElementById("confirmPassword");
+        const message = document.getElementById("formMessage");
 
-            const confirmPassword =
-                document.getElementById("confirmPassword").value;
+        function showMessage(text) {
+            message.textContent = text;
+            message.classList.remove("success");
+            message.style.display = "block";
+        }
 
-            if (password !== confirmPassword) {
-                alert("Passwords do not match!");
-                return false;
+        function checkPasswords() {
+            if (confirmPassword.value && password.value !== confirmPassword.value) {
+                confirmPassword.setCustomValidity("Passwords do not match.");
+            } else {
+                confirmPassword.setCustomValidity("");
+            }
+        }
+
+        password.addEventListener("input", checkPasswords);
+        confirmPassword.addEventListener("input", checkPasswords);
+
+        form.addEventListener("submit", function(event) {
+            checkPasswords();
+
+            if (!form.checkValidity()) {
+                event.preventDefault();
+                form.reportValidity();
+
+                if (password.value !== confirmPassword.value) {
+                    showMessage("Your passwords do not match. Please try again.");
+                }
+                return;
             }
 
-            return true;
-        }
-    </script>
+            if (password.value !== confirmPassword.value) {
+                event.preventDefault();
+                showMessage("Your passwords do not match. Please try again.");
+                confirmPassword.focus();
+                return;
+            }
 
+            message.style.display = "none";
+            // Valid data is submitted to your existing /register backend.
+        });
+    </script>
 </body>
 </html>
