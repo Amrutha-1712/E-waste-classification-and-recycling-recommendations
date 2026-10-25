@@ -1,0 +1,628 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>E-Waste Care | Neon Login</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: "Segoe UI", Arial, sans-serif
+        }
+
+        :root {
+            --g: #39ff88;
+            --bg: #030704
+        }
+
+        body {
+            min-height: 100vh;
+            display: grid;
+            place-items: center;
+            padding: 20px;
+            background: var(--bg);
+            color: #fff;
+            overflow-x: hidden;
+            position: relative
+        }
+
+        body:before,
+        body:after {
+            content: "";
+            position: fixed;
+            width: 260px;
+            height: 260px;
+            border-radius: 50%;
+            background: #00ff5530;
+            filter: blur(65px);
+            pointer-events: none;
+            animation: glow 7s ease-in-out infinite alternate
+        }
+
+        body:before {
+            top: -90px;
+            left: -80px
+        }
+
+        body:after {
+            bottom: -100px;
+            right: -70px;
+            animation-delay: -3s
+        }
+
+        .grid {
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            background-image: linear-gradient(#39ff880b 1px, transparent 1px), linear-gradient(90deg, #39ff880b 1px, transparent 1px);
+            background-size: 35px 35px
+        }
+
+        #particles {
+            position: fixed;
+            inset: 0;
+            overflow: hidden;
+            pointer-events: none
+        }
+
+        .p {
+            position: absolute;
+            bottom: -10px;
+            width: 3px;
+            height: 3px;
+            background: var(--g);
+            border-radius: 50%;
+            box-shadow: 0 0 8px var(--g);
+            animation: rise linear infinite
+        }
+
+        .card {
+            position: relative;
+            z-index: 1;
+            width: 900px;
+            max-width: 100%;
+            display: flex;
+            border-radius: 22px;
+            background: #08110b;
+            border: 1px solid #39ff8855;
+            overflow: hidden;
+            box-shadow: 0 0 25px #39ff8815, 0 25px 80px #000;
+            animation: enter .7s ease
+        }
+
+        .card:before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, var(--g), transparent);
+            animation: scan 4s linear infinite;
+            z-index: 3
+        }
+
+        .left {
+            width: 45%;
+            position: relative;
+            overflow: hidden;
+            padding: 35px 25px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            background: radial-gradient(ellipse at center, #124324, #061009 72%);
+            border-right: 1px solid #39ff8825
+        }
+
+        .ring {
+            position: absolute;
+            width: 280px;
+            height: 280px;
+            border: 1px solid #39ff8840;
+            border-radius: 50%;
+            animation: spin 14s linear infinite
+        }
+
+        .ring:before {
+            content: "";
+            position: absolute;
+            width: 9px;
+            height: 9px;
+            border-radius: 50%;
+            background: var(--g);
+            box-shadow: 0 0 15px var(--g);
+            top: 30px;
+            left: 35px
+        }
+
+        .ring.two {
+            width: 220px;
+            height: 220px;
+            border-style: dashed;
+            animation-direction: reverse;
+            animation-duration: 20s
+        }
+
+        .logo {
+            position: relative;
+            z-index: 1;
+            width: 115px;
+            height: 115px;
+            border: 1px solid #39ff8880;
+            border-radius: 50%;
+            display: grid;
+            place-items: center;
+            font-size: 58px;
+            margin-bottom: 25px;
+            box-shadow: 0 0 30px #39ff8820, inset 0 0 25px #39ff8815;
+            animation: float 3s ease-in-out infinite
+        }
+
+        .logo:after {
+            content: "";
+            position: absolute;
+            inset: -8px;
+            border: 2px solid transparent;
+            border-top-color: var(--g);
+            border-bottom-color: var(--g);
+            border-radius: 50%;
+            animation: spin 3s linear infinite
+        }
+
+        .left h1 {
+            position: relative;
+            z-index: 1;
+            font-size: 32px;
+            margin-bottom: 13px;
+            letter-spacing: -1px
+        }
+
+        .green {
+            color: var(--g);
+            text-shadow: 0 0 18px #39ff8840
+        }
+
+        .left p {
+            position: relative;
+            z-index: 1;
+            font-size: 12px;
+            line-height: 1.9;
+            color: #b4cdbb
+        }
+
+        .tags {
+            position: relative;
+            z-index: 1;
+            display: flex;
+            gap: 7px;
+            flex-wrap: wrap;
+            justify-content: center;
+            margin-top: 22px
+        }
+
+        .tags span {
+            padding: 7px 10px;
+            border: 1px solid #39ff8840;
+            border-radius: 20px;
+            color: var(--g);
+            font-size: 9px;
+            letter-spacing: 1px;
+            background: #39ff8808
+        }
+
+        .right {
+            width: 55%;
+            padding: 42px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center
+        }
+
+        .kicker {
+            font-size: 10px;
+            letter-spacing: 3px;
+            color: var(--g);
+            margin-bottom: 17px
+        }
+
+        h2 {
+            font-size: 32px;
+            line-height: 1.3;
+            margin-bottom: 12px
+        }
+
+        .desc {
+            font-size: 13px;
+            line-height: 1.8;
+            color: #94a99a;
+            margin-bottom: 25px
+        }
+
+        .field {
+            margin-bottom: 18px
+        }
+
+        label {
+            display: block;
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 1px;
+            color: #c9dfcf;
+            margin-bottom: 8px
+        }
+
+        input {
+            width: 100%;
+            padding: 14px;
+            background: #050a06;
+            border: 1px solid #2b4331;
+            border-radius: 8px;
+            color: white;
+            outline: none;
+            font-size: 13px;
+            transition: border .25s, box-shadow .25s, background .25s
+        }
+
+        input:focus {
+            border-color: var(--g);
+            background: #09160d;
+            box-shadow: 0 0 0 3px #39ff8818, 0 0 15px #39ff8810
+        }
+
+        .forgot {
+            text-align: right;
+            margin: -2px 0 20px
+        }
+
+        a {
+            color: var(--g);
+            text-decoration: none;
+            font-size: 12px;
+            font-weight: 700
+        }
+
+        a:hover {
+            text-decoration: underline;
+            color: #b4ffce
+        }
+
+        .btn {
+            position: relative;
+            width: 100%;
+            padding: 15px;
+            border: 0;
+            border-radius: 8px;
+            background: linear-gradient(100deg, #13c65a, #64ffa0);
+            color: #031007;
+            font-size: 12px;
+            font-weight: 900;
+            letter-spacing: .6px;
+            cursor: pointer;
+            overflow: hidden;
+            transition: transform .25s, box-shadow .25s
+        }
+
+        .btn:before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: -130%;
+            width: 70%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, #fff9, transparent);
+            transform: skewX(-25deg);
+            transition: left .6s
+        }
+
+        .btn:hover:before {
+            left: 150%
+        }
+
+        .btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px #39ff8840
+        }
+
+        .btn:active {
+            transform: scale(.98)
+        }
+
+        .google {
+            width: 100%;
+            padding: 13px;
+            margin-top: 12px;
+            background: #0b160e;
+            color: white;
+            border: 1px solid #304a37;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: .25s
+        }
+
+        .google:hover {
+            border-color: var(--g);
+            background: #102317
+        }
+
+        .google b {
+            font-size: 17px;
+            color: #4285f4;
+            margin-right: 8px
+        }
+
+        .msg {
+            font-size: 12px;
+            text-align: center;
+            line-height: 1.6;
+            margin-top: 13px;
+            overflow-wrap: anywhere
+        }
+
+        .register {
+            text-align: center;
+            color: #94a99a;
+            font-size: 12px;
+            margin-top: 22px
+        }
+
+        .footer {
+            text-align: center;
+            color: #688371;
+            font-size: 9px;
+            letter-spacing: 1px;
+            margin-top: 23px
+        }
+
+        .footer span {
+            color: var(--g)
+        }
+
+        .hidden {
+            display: none !important
+        }
+
+        .section {
+            animation: enter .35s ease
+        }
+
+        @keyframes enter {
+            from {
+                opacity: 0;
+                transform: translateY(13px)
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0)
+            }
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg)
+            }
+        }
+
+        @keyframes float {
+
+            0%,
+            100% {
+                transform: translateY(0)
+            }
+
+            50% {
+                transform: translateY(-9px)
+            }
+        }
+
+        @keyframes glow {
+            to {
+                transform: translate(40px, 30px);
+                opacity: .55
+            }
+        }
+
+        @keyframes scan {
+            0% {
+                left: -100%
+            }
+
+            45%,
+            100% {
+                left: 100%
+            }
+        }
+
+        @keyframes rise {
+            0% {
+                transform: translateY(0);
+                opacity: 0
+            }
+
+            15% {
+                opacity: .8
+            }
+
+            90% {
+                opacity: .5
+            }
+
+            100% {
+                transform: translateY(-105vh);
+                opacity: 0
+            }
+        }
+
+        @media(max-width:650px) {
+            body {
+                padding: 12px
+            }
+
+            .card {
+                flex-direction: column;
+                max-width: 420px
+            }
+
+            .left,
+            .right {
+                width: 100%
+            }
+
+            .left {
+                padding: 25px 15px;
+                border-right: 0;
+                border-bottom: 1px solid #39ff8825
+            }
+
+            .ring {
+                width: 210px;
+                height: 210px
+            }
+
+            .ring.two {
+                width: 165px;
+                height: 165px
+            }
+
+            .logo {
+                width: 78px;
+                height: 78px;
+                font-size: 40px;
+                margin-bottom: 12px
+            }
+
+            .left h1 {
+                font-size: 27px;
+                margin-bottom: 7px
+            }
+
+            .tags {
+                margin-top: 12px
+            }
+
+            .right {
+                padding: 28px 22px
+            }
+
+            h2 {
+                font-size: 28px
+            }
+        }
+
+        @media(prefers-reduced-motion:reduce) {
+
+            *,
+            *:before,
+            *:after {
+                animation: none !important;
+                transition: none !important
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="grid"></div>
+    <div id="particles"></div>
+
+    <main class="card">
+        <aside class="left">
+            <div class="ring"></div>
+            <div class="ring two"></div>
+            <div class="logo">♻️</div>
+            <h1>E-Waste <span class="green">Care</span></h1>
+            <p>SMART TECHNOLOGY.<br>SUSTAINABLE TOMORROW.</p>
+            <p style="margin-top:10px">Classify electronic waste.<br>Discover smarter recycling solutions.</p>
+            <div class="tags"><span>♻ RECYCLING-RECOMMENDATIONS</span></div>
+        </aside>
+
+        <div class="right">
+            <section id="login" class="section">
+                <div class="kicker">✦ &nbsp; WELCOME BACK</div>
+                <h2>Think Green.<br><span class="green">Live Clean.</span></h2>
+                <p class="desc">Login to continue to your e-waste dashboard.</p>
+                <form id="loginForm">
+                    <div class="field"><label for="username">USERNAME OR EMAIL</label><input id="username"
+                            placeholder="Enter username or email" autocomplete="username" required></div>
+                    <div class="field"><label for="password">PASSWORD</label><input id="password" type="password"
+                            placeholder="Enter your password" autocomplete="current-password" required></div>
+                    <div class="forgot"><a href="#" id="forgotLink">Forgot Password?</a></div>
+                    <button class="btn" type="submit">LOGIN TO DASHBOARD &nbsp; ↗</button>
+                </form>
+                <button class="google" id="googleBtn" type="button"><b>G</b> Continue with Google</button>
+                <div class="msg" id="loginMsg" role="status"></div>
+                <div class="register">Don't have an account? <a href="register.html">Register Here ↗</a></div>
+                <div class="footer"><span>✦</span> EVERY DEVICE DESERVES A SECOND LIFE</div>
+            </section>
+
+            <section id="recovery" class="section hidden">
+                <div class="kicker">✦ &nbsp; ACCOUNT RECOVERY</div>
+                <h2>Forgot <span class="green">Password?</span></h2>
+                <p class="desc">Enter your registered email address.</p>
+                <form id="emailForm">
+                    <div class="field"><label for="email">REGISTERED EMAIL</label><input id="email" type="email"
+                            placeholder="Enter your email" required></div>
+                    <button class="btn">CONTINUE &nbsp; ↗</button>
+                </form>
+                <div class="msg" id="emailMsg" role="status"></div>
+                <div class="register"><a href="#" id="back">← Back to Login</a></div>
+            </section>
+        </div>
+    </main>
+
+    <script>
+        /* Lightweight particles: created locally, no downloads */
+        const area = document.getElementById("particles");
+        for (let i = 0; i < 18; i++) {
+            const p = document.createElement("i");
+            p.className = "p";
+            p.style.left = Math.random() * 100 + "%";
+            p.style.animationDuration = (8 + Math.random() * 10) + "s";
+            p.style.animationDelay = (-Math.random() * 15) + "s";
+            area.appendChild(p);
+        }
+        const login = document.getElementById("login");
+        const recovery = document.getElementById("recovery");
+        function showRecovery(on) {
+            login.classList.toggle("hidden", on);
+            recovery.classList.toggle("hidden", !on);
+        }
+        document.getElementById("forgotLink").onclick = e => {
+            e.preventDefault(); showRecovery(true);
+        };
+        document.getElementById("back").onclick = e => {
+            e.preventDefault(); showRecovery(false);
+        };
+        document.getElementById("loginForm").onsubmit = e => {
+            e.preventDefault();
+            let user;
+            try { user = JSON.parse(localStorage.getItem("registeredUser")) } catch (err) { }
+            const name = document.getElementById("username").value.trim().toLowerCase();
+            const pass = document.getElementById("password").value;
+            const m = document.getElementById("loginMsg");
+            if (!user) { m.style.color = "#ff7777"; m.textContent = "No account found. Please register first."; return }
+            if ((name === String(user.username || "").toLowerCase() || name === String(user.email || "").toLowerCase()) && pass === user.password) {
+                localStorage.setItem("isLoggedIn", "true");
+                m.style.color = "#39ff88"; m.textContent = "✓ Login successful! Redirecting...";
+                setTimeout(() => location.href = "dashboard.html", 500);
+            } else { m.style.color = "#ff7777"; m.textContent = "Incorrect username/email or password." }
+        };
+        document.getElementById("emailForm").onsubmit = e => {
+            e.preventDefault();
+            const m = document.getElementById("emailMsg");
+            m.style.color = "#ffd080";
+            m.textContent = "Connect a secure email verification service to reset your password.";
+        };
+        document.getElementById("googleBtn").addEventListener("click", function () {
+    window.open("https://accounts.google.com/", "_blank");
+});
+        
+    </script>
+</body>
+
+</html>
