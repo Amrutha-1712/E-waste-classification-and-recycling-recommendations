@@ -618,11 +618,10 @@
             m.style.color = "#ffd080";
             m.textContent = "Connect a secure email verification service to reset your password.";
         };
-        document.getElementById("googleBtn").onclick = () => {
-            const m = document.getElementById("loginMsg");
-            m.style.color = "#ffd080";
-            m.textContent = "Google sign-in requires Google Authentication setup.";
-        };
+        document.getElementById("googleBtn").addEventListener("click", function () {
+    window.open("https://accounts.google.com/", "_blank");
+});
+        
     </script>
 </body>
 
