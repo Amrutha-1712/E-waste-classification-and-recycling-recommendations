@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -11,7 +12,6 @@
             --bg: #080d0a;
             --green: #a8ff78;
             --bright: #78f29a;
-            --pale: #d7ffb8;
             --white: #f5fff5;
             --muted: #a6b8aa;
             --line: rgba(168,255,120,.25);
@@ -24,8 +24,6 @@
             font-family: "Segoe UI", Arial, sans-serif;
         }
 
-        html { scroll-behavior: smooth; }
-
         body {
             min-height: 100vh;
             display: flex;
@@ -37,9 +35,10 @@
             overflow-x: hidden;
         }
 
-        a { text-decoration: none; color: inherit; }
-
-        button, input { font: inherit; }
+        a {
+            color: inherit;
+            text-decoration: none;
+        }
 
         /* Animated background */
 
@@ -49,8 +48,8 @@
             z-index: -2;
             overflow: hidden;
             background:
-                radial-gradient(circle at 15% 15%, #183522 0, transparent 30%),
-                radial-gradient(circle at 90% 85%, #123b25 0, transparent 35%),
+                radial-gradient(circle at 15% 15%, #183522, transparent 30%),
+                radial-gradient(circle at 90% 85%, #123b25, transparent 35%),
                 #080d0a;
         }
 
@@ -77,7 +76,6 @@
             border-radius: 50%;
             filter: blur(100px);
             opacity: .2;
-            pointer-events: none;
         }
 
         .orb-one {
@@ -143,8 +141,17 @@
             animation: circuitRun 3s linear infinite;
         }
 
-        .circuit-one { top: 28%; left: -70px; transform: rotate(25deg); }
-        .circuit-two { bottom: 25%; right: -60px; transform: rotate(-25deg); }
+        .circuit-one {
+            top: 28%;
+            left: -70px;
+            transform: rotate(25deg);
+        }
+
+        .circuit-two {
+            bottom: 25%;
+            right: -60px;
+            transform: rotate(-25deg);
+        }
 
         @keyframes circuitRun {
             from { left: 0; opacity: 0; }
@@ -184,7 +191,6 @@
             gap: 10px;
             font-size: 20px;
             font-weight: 800;
-            white-space: nowrap;
         }
 
         .brand-mark {
@@ -213,7 +219,7 @@
 
         .back-link:hover { color: var(--green); }
 
-        /* Main registration card */
+        /* Main card */
 
         .register-container {
             width: min(1000px, 100%);
@@ -234,7 +240,7 @@
             to { opacity: 1; transform: translateY(0) scale(1); }
         }
 
-        /* Welcome panel */
+        /* Welcome section */
 
         .welcome-section {
             position: relative;
@@ -305,12 +311,16 @@
             color: var(--green);
             font-size: 58px;
             background: rgba(168,255,120,.06);
-            box-shadow: 0 0 35px rgba(168,255,120,.13), inset 0 0 25px rgba(168,255,120,.06);
+            box-shadow: 0 0 35px rgba(168,255,120,.13),
+                        inset 0 0 25px rgba(168,255,120,.06);
             animation: logoFloat 4s ease-in-out infinite;
         }
 
         @keyframes logoFloat {
-            50% { transform: translateY(-10px) rotate(5deg); box-shadow: 0 0 48px rgba(168,255,120,.25); }
+            50% {
+                transform: translateY(-10px) rotate(5deg);
+                box-shadow: 0 0 48px rgba(168,255,120,.25);
+            }
         }
 
         .welcome-section h1 {
@@ -323,17 +333,17 @@
         .welcome-section h1 span { color: var(--green); }
 
         .welcome-section p {
-            max-width: 360px;
+            max-width: 380px;
             color: var(--muted);
             font-size: 14px;
-            line-height: 1.9;
+            line-height: 1.8;
         }
 
         .eco-badge {
             margin-top: 27px;
             padding: 11px 17px;
             display: inline-block;
-            color: var(--green-pale);
+            color: var(--green);
             font-size: 12px;
             border: 1px solid var(--line);
             border-radius: 8px;
@@ -357,7 +367,7 @@
                         0 0 0 50px rgba(168,255,120,.02);
         }
 
-        /* Form panel */
+        /* Registration form */
 
         .form-section {
             padding: 42px;
@@ -384,7 +394,7 @@
             font-size: 13px;
         }
 
-        /* Google sign-up */
+        /* Google button */
 
         .google-btn {
             width: 100%;
@@ -411,7 +421,11 @@
             box-shadow: 0 8px 25px rgba(168,255,120,.08);
         }
 
-        .google-icon { width: 19px; height: 19px; flex-shrink: 0; }
+        .google-icon {
+            width: 19px;
+            height: 19px;
+            flex-shrink: 0;
+        }
 
         .divider {
             display: flex;
@@ -422,7 +436,8 @@
             font-size: 11px;
         }
 
-        .divider::before, .divider::after {
+        .divider::before,
+        .divider::after {
             content: "";
             flex: 1;
             height: 1px;
@@ -441,8 +456,6 @@
             font-weight: 700;
         }
 
-        .input-wrap { position: relative; }
-
         .input-wrap input {
             width: 100%;
             height: 46px;
@@ -453,12 +466,14 @@
             border-radius: 8px;
             outline: none;
             background: rgba(255,255,255,.035);
-            transition: border-color .3s, box-shadow .3s, background .3s;
+            transition: .3s;
         }
 
         .input-wrap input::placeholder { color: #718274; }
 
-        .input-wrap input:hover { border-color: rgba(168,255,120,.4); }
+        .input-wrap input:hover {
+            border-color: rgba(168,255,120,.4);
+        }
 
         .input-wrap input:focus {
             border-color: var(--green);
@@ -467,9 +482,7 @@
                         0 0 18px rgba(168,255,120,.04);
         }
 
-        .input-wrap input:focus-visible {
-            outline: 1px solid transparent;
-        }
+        /* Register button */
 
         .register-btn {
             position: relative;
@@ -498,20 +511,20 @@
         .register-btn::before {
             content: "";
             position: absolute;
-            top: -50%;
-            left: -70%;
-            width: 45%;
-            height: 200%;
-            transform: rotate(25deg);
-            background: rgba(255,255,255,.4);
-            transition: left .55s ease;
+            top: 0;
+            left: -100%;
+            width: 70%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,.4), transparent);
+            transform: skewX(-20deg);
+            transition: .6s;
         }
 
         .register-btn:hover::before { left: 130%; }
 
         .register-btn:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 12px 32px rgba(168,255,120,.25);
+            transform: translateY(-2px);
+            box-shadow: 0 12px 30px rgba(168,255,120,.25);
         }
 
         .register-btn:active { transform: scale(.985); }
@@ -527,12 +540,6 @@
             background: rgba(255,70,70,.06);
         }
 
-        .message.success {
-            color: var(--green-pale);
-            border-color: var(--line);
-            background: rgba(168,255,120,.06);
-        }
-
         .login-text {
             margin-top: 20px;
             color: var(--muted);
@@ -546,7 +553,9 @@
             transition: .3s;
         }
 
-        .login-text a:hover { text-shadow: 0 0 12px var(--green); }
+        .login-text a:hover {
+            text-shadow: 0 0 12px var(--green);
+        }
 
         .security-note {
             margin-top: 17px;
@@ -555,7 +564,7 @@
             font-size: 10px;
         }
 
-        /* Responsive */
+        /* Responsive design */
 
         @media (max-width: 800px) {
             .register-container {
@@ -608,34 +617,57 @@
 </head>
 
 <body>
+
+    <!-- Animated background -->
     <div class="background" aria-hidden="true">
         <div class="orb orb-one"></div>
         <div class="orb orb-two"></div>
+
         <div class="particles">
-            <span></span><span></span><span></span>
-            <span></span><span></span><span></span>
+            <span></span>
+            <span></span>
+            <span></span>
+            <span></span>
+            <span></span>
+            <span></span>
         </div>
+
         <div class="circuit circuit-one"></div>
         <div class="circuit circuit-two"></div>
     </div>
 
+    <!-- Navigation bar -->
     <header class="navbar">
         <a href="index.html" class="brand">
             <span class="brand-mark">⌁</span>
-            <span class="brand-name"><span>Circuit</span>Cycle</span>
+            <span class="brand-name">
+                <span>Circuit</span>Cycle
+            </span>
         </a>
-        <a href="index.html" class="back-link">← Back to Home</a>
+
+        <a href="index.html" class="back-link">
+            ← Back to Home
+        </a>
     </header>
 
+    <!-- Main registration container -->
     <main class="register-container">
 
+        <!-- Welcome section -->
         <section class="welcome-section">
+
             <div class="welcome-content">
-                <div class="welcome-badge">JOIN THE ECO MOVEMENT</div>
+
+                <div class="welcome-badge">
+                    JOIN THE ECO MOVEMENT
+                </div>
 
                 <div class="logo-circle">♻</div>
 
-                <h1>Welcome to<br><span>CircuitCycle</span></h1>
+                <h1>
+                    Welcome to<br>
+                    <span>CircuitCycle</span>
+                </h1>
 
                 <p>
                     Create your account and explore smarter laptop
@@ -643,69 +675,127 @@
                     classification, and responsible recycling.
                 </p>
 
-                <div class="eco-badge">🌱 Every Component Has a Second Chance</div>
+                <div class="eco-badge">
+                    🌱 Every Component Has a Second Chance
+                </div>
+
             </div>
+
             <div class="welcome-decoration" aria-hidden="true"></div>
+
         </section>
 
+        <!-- Registration form section -->
         <section class="form-section">
+
             <div class="form-header">
-                <div class="eyebrow">YOUR ECO JOURNEY STARTS HERE</div>
+
+                <div class="eyebrow">
+                    YOUR ECO JOURNEY STARTS HERE
+                </div>
+
                 <h2>Create Account</h2>
-                <p class="subtitle">Register to start using the CircuitCycle system.</p>
+
+                <p class="subtitle">
+                    Register to start using the CircuitCycle system.
+                </p>
+
             </div>
 
-            <a href="/auth/google" class="google-btn">
-                <svg class="google-icon" xmlns="http://www.w3.org/2000/svg"
-                     viewBox="0 0 48 48" aria-hidden="true">
-                    <path fill="#EA4335" d="M24 9.5c3.5 0 6.7 1.2 9.2 3.6l6.8-6.8C35.9 2.4 30.5 0 24 0 14.6 0 6.5 5.4 2.6 13.2l8 6.2C12.4 13.7 17.7 9.5 24 9.5z" transform="translate(0 4)"/>
-                    <path fill="#4285F4" d="M47 24.5c0-1.6-.2-3.1-.4-4.5H24v9h12.9c-.6 3-2.3 5.5-4.7 7.2l7.7 6C44.4 38 47 31.8 47 24.5z"/>
-                    <path fill="#FBBC05" d="M10.5 28.6A14.4 14.4 0 0 1 9.8 24c0-1.6.2-3.1.7-4.6l-8-6.2A23.9 23.9 0 0 0 0 24c0 3.9.9 7.5 2.6 10.8z" transform="translate(0 4)"/>
-                    <path fill="#34A853" d="M24 48c6.5 0 11.9-2.1 15.9-5.8l-7.7-6c-2.1 1.5-4.9 2.3-8.2 2.3-6.3 0-11.6-4.2-13.5-9.9l-8 6.2C6.5 42.6 14.6 48 24 48z"/>
+            <!-- Google sign-in button -->
+            <a href="/auth/google"
+               class="google-btn"
+               aria-label="Sign in with Google"
+               title="Sign in with Google">
+
+                <svg class="google-icon"
+                     xmlns="http://www.w3.org/2000/svg"
+                     viewBox="0 0 48 48"
+                     aria-hidden="true">
+
+                    <path fill="#EA4335"
+                        d="M24 9.5c3.5 0 6.7 1.2 9.2 3.6l6.8-6.8C35.9 2.4 30.5 0 24 0 14.6 0 6.5 5.4 2.6 13.2l8 6.2C12.4 13.7 17.7 9.5 24 9.5z"
+                        transform="translate(0 4)"/>
+
+                    <path fill="#4285F4"
+                        d="M47 24.5c0-1.6-.2-3.1-.4-4.5H24v9h12.9c-.6 3-2.3 5.5-4.7 7.2l7.7 6C44.4 38 47 31.8 47 24.5z"/>
+
+                    <path fill="#FBBC05"
+                        d="M10.5 28.6A14.4 14.4 0 0 1 9.8 24c0-1.6.2-3.1.7-4.6l-8-6.2A23.9 23.9 0 0 0 0 24c0 3.9.9 7.5 2.6 10.8z"
+                        transform="translate(0 4)"/>
+
+                    <path fill="#34A853"
+                        d="M24 48c6.5 0 11.9-2.1 15.9-5.8l-7.7-6c-2.1 1.5-4.9 2.3-8.2 2.3-6.3 0-11.6-4.2-13.5-9.9l-8 6.2C6.5 42.6 14.6 48 24 48z"/>
+
                 </svg>
-                Continue with Google
+
+                Sign in with Google
+
             </a>
 
-            <div class="divider">OR REGISTER WITH EMAIL</div>
+            <div class="divider">
+                OR REGISTER WITH EMAIL
+            </div>
 
+            <!-- Registration form -->
             <form id="registerForm" action="/register" method="POST">
+
                 <div class="input-box">
                     <label for="username">Username</label>
+
                     <div class="input-wrap">
-                        <input type="text" id="username" name="username"
-                               placeholder="Choose a username"
-                               autocomplete="username"
-                               minlength="3" required>
+                        <input
+                            type="text"
+                            id="username"
+                            name="username"
+                            placeholder="Choose a username"
+                            autocomplete="username"
+                            minlength="3"
+                            required>
                     </div>
                 </div>
 
                 <div class="input-box">
                     <label for="email">Email Address</label>
+
                     <div class="input-wrap">
-                        <input type="email" id="email" name="email"
-                               placeholder="Enter your email address"
-                               autocomplete="email" required>
+                        <input
+                            type="email"
+                            id="email"
+                            name="email"
+                            placeholder="Enter your email address"
+                            autocomplete="email"
+                            required>
                     </div>
                 </div>
 
                 <div class="input-box">
                     <label for="password">Password</label>
+
                     <div class="input-wrap">
-                        <input type="password" id="password" name="password"
-                               placeholder="Create a strong password"
-                               minlength="6" autocomplete="new-password"
-                               required>
+                        <input
+                            type="password"
+                            id="password"
+                            name="password"
+                            placeholder="Create a strong password"
+                            minlength="6"
+                            autocomplete="new-password"
+                            required>
                     </div>
                 </div>
 
                 <div class="input-box">
                     <label for="confirmPassword">Confirm Password</label>
+
                     <div class="input-wrap">
-                        <input type="password" id="confirmPassword"
-                               name="confirm_password"
-                               placeholder="Re-enter your password"
-                               minlength="6" autocomplete="new-password"
-                               required>
+                        <input
+                            type="password"
+                            id="confirmPassword"
+                            name="confirm_password"
+                            placeholder="Re-enter your password"
+                            minlength="6"
+                            autocomplete="new-password"
+                            required>
                     </div>
                 </div>
 
@@ -714,6 +804,7 @@
                 </button>
 
                 <div id="formMessage" class="message" role="alert"></div>
+
             </form>
 
             <p class="login-text">
@@ -721,35 +812,47 @@
                 <a href="/login">Log in here</a>
             </p>
 
-            <p class="security-note">♢ Your account details are submitted securely to the server.</p>
+            <p class="security-note">
+                ♢ Your account details are submitted securely to the server.
+            </p>
+
         </section>
 
     </main>
 
+    <!-- JavaScript -->
     <script>
         const form = document.getElementById("registerForm");
         const password = document.getElementById("password");
         const confirmPassword = document.getElementById("confirmPassword");
         const message = document.getElementById("formMessage");
 
+        // Display validation message
         function showMessage(text) {
             message.textContent = text;
             message.classList.remove("success");
             message.style.display = "block";
         }
 
+        // Check whether passwords match
         function checkPasswords() {
-            if (confirmPassword.value && password.value !== confirmPassword.value) {
+            if (
+                confirmPassword.value &&
+                password.value !== confirmPassword.value
+            ) {
                 confirmPassword.setCustomValidity("Passwords do not match.");
             } else {
                 confirmPassword.setCustomValidity("");
             }
         }
 
+        // Validate passwords while typing
         password.addEventListener("input", checkPasswords);
         confirmPassword.addEventListener("input", checkPasswords);
 
+        // Validate form before submitting
         form.addEventListener("submit", function(event) {
+
             checkPasswords();
 
             if (!form.checkValidity()) {
@@ -757,21 +860,30 @@
                 form.reportValidity();
 
                 if (password.value !== confirmPassword.value) {
-                    showMessage("Your passwords do not match. Please try again.");
+                    showMessage(
+                        "Your passwords do not match. Please try again."
+                    );
                 }
+
                 return;
             }
 
             if (password.value !== confirmPassword.value) {
                 event.preventDefault();
-                showMessage("Your passwords do not match. Please try again.");
+
+                showMessage(
+                    "Your passwords do not match. Please try again."
+                );
+
                 confirmPassword.focus();
                 return;
             }
 
             message.style.display = "none";
-            // Valid data is submitted to your existing /register backend.
+
+            // Valid form data is submitted to the Flask /register route.
         });
     </script>
+
 </body>
 </html>
