@@ -118,6 +118,11 @@ def login_page():
         return redirect(url_for('home_page'))
     return render_template('login.html')
 
+@app.route('/classify')
+@app.route('/classify.html')
+def classify_page():
+    return render_template('classify.html')
+
 
 def find_user_by_email(users, email):
     normalized_email = email.strip().lower()

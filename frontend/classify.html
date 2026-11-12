@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#080d0a">
+    <meta name="description" content="Capture or upload a laptop component image for CircuitCycle classification.">
+    <title>CircuitCycle | Classify a Component</title>
+    <style>
+        :root {
+            --bg: #080d0a;
+            --panel: rgba(17, 28, 21, .86);
+            --green: #a8ff78;
+            --bright: #78f29a;
+            --white: #f5fff5;
+            --muted: #a6b8aa;
+            --line: rgba(168, 255, 120, .22);
+        }
+        * { box-sizing: border-box; }
+        body {
+            min-height: 100vh;
+            margin: 0;
+            padding: 110px 20px 50px;
+            color: var(--white);
+            font-family: Inter, "Segoe UI", Arial, sans-serif;
+            line-height: 1.6;
+            background: var(--bg);
+        }
+        a { color: inherit; text-decoration: none; }
+        button, input { font: inherit; }
+        button:focus-visible, a:focus-visible {
+            outline: 2px solid var(--green);
+            outline-offset: 4px;
+        }
+        .space-background {
+            position: fixed;
+            inset: 0;
+            z-index: -1;
+            overflow: hidden;
+            pointer-events: none;
+            background:
+                radial-gradient(circle at 13% 18%, rgba(168,255,120,.12), transparent 28%),
+                radial-gradient(circle at 86% 15%, rgba(120,242,154,.09), transparent 27%),
+                radial-gradient(circle at 52% 100%, rgba(215,255,184,.055), transparent 35%),
+                var(--bg);
+        }
+        .space-background::before {
+            content: "";
+            position: absolute;
+            inset: 0;
+            opacity: .35;
+            background-image: linear-gradient(rgba(168,255,120,.04) 1px, transparent 1px),
+                              linear-gradient(90deg, rgba(168,255,120,.04) 1px, transparent 1px);
+            background-size: 62px 62px;
+            animation: gridDrift 24s linear infinite;
+        }
+        @keyframes gridDrift { to { transform: translate(62px, 62px); } }
+        .nebula {
+            position: absolute;
+            width: 430px;
+            height: 430px;
+            border-radius: 50%;
+            filter: blur(125px);
+            opacity: .18;
+        }
+        .nebula-one {
+            top: -180px;
+            left: -120px;
+            background: var(--green);
+            animation: floatOne 12s ease-in-out infinite alternate;
+        }
+        .nebula-two {
+            right: -150px;
+            bottom: -180px;
+            background: var(--bright);
+            animation: floatTwo 14s ease-in-out infinite alternate;
+        }
+        @keyframes floatOne { to { transform: translate(150px, 100px) scale(1.2); } }
+        @keyframes floatTwo { to { transform: translate(-130px, -100px) scale(1.2); } }
+        .navbar {
+            position: fixed;
+            top: 16px;
+            left: 50%;
+            z-index: 2;
+            width: min(1180px, 92%);
+            padding: 11px 16px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 20px;
+            transform: translateX(-50%);
+            border: 1px solid var(--line);
+            border-radius: 17px;
+            background: rgba(7, 14, 9, .84);
+            backdrop-filter: blur(18px);
+            box-shadow: 0 14px 45px rgba(0,0,0,.3);
+            animation: slideDown .8s ease both;
+        }
+        @keyframes slideDown {
+            from { opacity: 0; transform: translate(-50%, -16px); }
+            to { opacity: 1; transform: translate(-50%, 0); }
+        }
+        .brand { display: flex; align-items: center; gap: 10px; font-size: 20px; font-weight: 800; }
+        .brand-mark {
+            width: 38px;
+            height: 38px;
+            display: grid;
+            place-items: center;
+            color: var(--green);
+            font-size: 23px;
+            border: 1px solid var(--green);
+            border-radius: 10px;
+            animation: markPulse 3s ease-in-out infinite;
+        }
+        .brand-name span { color: var(--green); }
+        @keyframes markPulse { 50% { transform: translateY(-2px); box-shadow: 0 0 30px rgba(168,255,120,.32); } }
+        .back-link { color: var(--muted); font-size: 13px; transition: color .25s; }
+        .back-link:hover { color: var(--green); }
+        main { width: min(980px, 100%); margin: 22px auto 0; animation: reveal .8s .1s ease both; }
+        @keyframes reveal { from { opacity: 0; transform: translateY(22px); } to { opacity: 1; transform: translateY(0); } }
+        .intro { margin-bottom: 30px; text-align: center; }
+        .eyebrow {
+            display: inline-flex;
+            padding: 7px 12px;
+            color: var(--bright);
+            font-size: 10px;
+            font-weight: 800;
+            letter-spacing: 1.8px;
+            border: 1px solid rgba(120,242,154,.25);
+            border-radius: 6px;
+            background: rgba(120,242,154,.055);
+        }
+        h1 { margin: 18px 0 10px; font-size: clamp(36px, 6vw, 58px); line-height: 1.05; letter-spacing: -2px; }
+        h1 span { color: var(--green); }
+        .intro p { max-width: 610px; margin: auto; color: var(--muted); }
+        .choice-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; }
+        .choice-card, .preview-card {
+            padding: 24px;
+            border: 1px solid var(--line);
+            border-radius: 18px;
+            background: var(--panel);
+            backdrop-filter: blur(16px);
+            box-shadow: 0 22px 65px rgba(0,0,0,.25);
+            transition: transform .3s, border-color .3s, box-shadow .3s;
+        }
+        .choice-card:hover { transform: translateY(-4px); border-color: rgba(168,255,120,.48); box-shadow: 0 24px 60px rgba(0,0,0,.34); }
+        .choice-icon {
+            width: 48px;
+            height: 48px;
+            display: grid;
+            place-items: center;
+            margin-bottom: 15px;
+            color: var(--green);
+            font-size: 23px;
+            border: 1px solid var(--line);
+            border-radius: 13px;
+            background: rgba(168,255,120,.07);
+        }
+        h2 { margin: 0 0 7px; font-size: 20px; }
+        .choice-card p { min-height: 48px; margin: 0 0 18px; color: var(--muted); font-size: 14px; }
+        .button {
+            min-height: 44px;
+            padding: 11px 16px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            color: var(--white);
+            font-weight: 800;
+            border: 1px solid var(--line);
+            border-radius: 8px;
+            background: rgba(255,255,255,.025);
+            cursor: pointer;
+            transition: .25s;
+        }
+        .button:hover { transform: translateY(-2px); border-color: var(--green); }
+        .button-primary { color: #101a0c; border-color: var(--green); background: var(--green); }
+        .button-primary:hover { box-shadow: 0 10px 24px rgba(168,255,120,.2); }
+        .button:disabled { opacity: .55; cursor: not-allowed; transform: none; }
+        .camera-panel, .preview-card, .result { margin-top: 20px; }
+        .camera-panel[hidden], .preview-card[hidden], .result[hidden], .camera-fallback[hidden] { display: none; }
+        .camera-panel { padding: 18px; border: 1px solid var(--line); border-radius: 16px; background: rgba(17,28,21,.75); }
+        .camera-panel video, .preview-image {
+            width: 100%;
+            max-height: 460px;
+            display: block;
+            object-fit: contain;
+            border-radius: 10px;
+            background: #050805;
+        }
+        .camera-controls { margin-top: 14px; display: flex; flex-wrap: wrap; gap: 10px; }
+        .camera-fallback { margin: 12px 0 0; color: var(--muted); font-size: 13px; }
+        .preview-heading { margin: 0 0 12px; color: var(--muted); font-size: 13px; }
+        .preview-image { max-height: 420px; }
+        .preview-name { margin: 11px 0 0; overflow-wrap: anywhere; color: var(--muted); font-size: 13px; }
+        .classify-row { margin-top: 18px; text-align: center; }
+        .result {
+            padding: 16px 18px;
+            color: var(--muted);
+            border: 1px solid var(--line);
+            border-radius: 12px;
+            background: rgba(17,28,21,.82);
+        }
+        .result strong { display: block; margin-bottom: 4px; color: var(--green); }
+        .result p { margin: 0; }
+        .result.error { border-color: rgba(255,160,120,.4); }
+        .result.error strong { color: #ffb28f; }
+        .sr-only {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            padding: 0;
+            margin: -1px;
+            overflow: hidden;
+            clip: rect(0,0,0,0);
+            white-space: nowrap;
+            border: 0;
+        }
+        @media (max-width: 650px) {
+            body { padding: 92px 14px 36px; }
+            .navbar { width: calc(100% - 20px); }
+            .choice-grid { grid-template-columns: 1fr; }
+            .choice-card { padding: 20px; }
+            .choice-card p { min-height: 0; }
+        }
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; scroll-behavior: auto !important; }
+        }
+    </style>
+</head>
+<body>
+    <div class="space-background" aria-hidden="true">
+        <div class="nebula nebula-one"></div>
+        <div class="nebula nebula-two"></div>
+    </div>
+    <header class="navbar">
+        <a href="/" class="brand" aria-label="CircuitCycle home">
+            <span class="brand-mark">⌁</span><span class="brand-name"><span>Circuit</span>Cycle</span>
+        </a>
+        <a href="/" class="back-link">← Back to home</a>
+    </header>
+
+    <main>
+        <div class="intro">
+            <span class="eyebrow">LAPTOP COMPONENT SCAN</span>
+            <h1>Choose how to <span>start.</span></h1>
+            <p>Take a photo of a laptop component with your camera, or select an image from your device.</p>
+        </div>
+
+        <section class="choice-grid" aria-label="Choose an image source">
+            <article class="choice-card">
+                <div class="choice-icon" aria-hidden="true">⌾</div>
+                <h2>Use your camera</h2>
+                <p>Open your camera, frame the component, and capture a clear image.</p>
+                <button class="button button-primary" id="openCamera" type="button">Open camera</button>
+                <div class="camera-fallback" id="cameraFallback" hidden>
+                    <p id="cameraMessage" role="status"></p>
+                    <button class="button" id="cameraFileButton" type="button">Take a photo with this device</button>
+                </div>
+            </article>
+            <article class="choice-card">
+                <div class="choice-icon" aria-hidden="true">▧</div>
+                <h2>Upload an image</h2>
+                <p>Choose an existing photo of a laptop component from your device.</p>
+                <button class="button button-primary" id="selectImage" type="button">Choose image</button>
+                <input class="sr-only" id="imageFile" type="file" accept="image/*">
+            </article>
+        </section>
+
+        <section class="camera-panel" id="cameraPanel" aria-label="Camera preview" hidden>
+            <video id="cameraPreview" autoplay playsinline muted></video>
+            <div class="camera-controls">
+                <button class="button button-primary" id="captureImage" type="button">Capture image</button>
+                <button class="button" id="closeCamera" type="button">Close camera</button>
+            </div>
+            <canvas id="captureCanvas" class="sr-only"></canvas>
+        </section>
+
+        <section class="preview-card" id="previewCard" aria-label="Selected image" hidden>
+            <h2 class="preview-heading">Image ready</h2>
+            <img class="preview-image" id="imagePreview" alt="Selected laptop component preview">
+            <p class="preview-name" id="imageName"></p>
+            <div class="classify-row">
+                <button class="button button-primary" id="classifyImage" type="button">Classify image →</button>
+            </div>
+        </section>
+
+        <div class="result" id="result" role="status" aria-live="polite" hidden>
+            <strong id="resultTitle"></strong>
+            <p id="resultText"></p>
+        </div>
+    </main>
+
+    <script>
+        (function () {
+            const imageFile = document.getElementById("imageFile");
+            const cameraFileInput = document.createElement("input");
+            cameraFileInput.type = "file";
+            cameraFileInput.accept = "image/*";
+            cameraFileInput.capture = "environment";
+            cameraFileInput.className = "sr-only";
+            cameraFileInput.tabIndex = -1;
+            document.body.appendChild(cameraFileInput);
+
+            const cameraPanel = document.getElementById("cameraPanel");
+            const cameraPreview = document.getElementById("cameraPreview");
+            const previewCard = document.getElementById("previewCard");
+            const imagePreview = document.getElementById("imagePreview");
+            const imageName = document.getElementById("imageName");
+            const result = document.getElementById("result");
+            const cameraFallback = document.getElementById("cameraFallback");
+            const cameraMessage = document.getElementById("cameraMessage");
+            let activeStream = null;
+            let currentImageUrl = null;
+
+            function showImage(file) {
+                if (!file || !file.type.startsWith("image/")) {
+                    showResult("Choose an image", "Please select a valid image file.", true);
+                    return;
+                }
+                stopCamera();
+                if (currentImageUrl) URL.revokeObjectURL(currentImageUrl);
+                currentImageUrl = URL.createObjectURL(file);
+                imagePreview.src = currentImageUrl;
+                imageName.textContent = file.name || "Captured image";
+                previewCard.hidden = false;
+                result.hidden = true;
+                previewCard.scrollIntoView({ behavior: "smooth", block: "nearest" });
+            }
+
+            function showResult(title, message, isError) {
+                document.getElementById("resultTitle").textContent = title;
+                document.getElementById("resultText").textContent = message;
+                result.classList.toggle("error", Boolean(isError));
+                result.hidden = false;
+            }
+
+            function stopCamera() {
+                if (activeStream) {
+                    activeStream.getTracks().forEach(function (track) { track.stop(); });
+                    activeStream = null;
+                }
+                cameraPreview.srcObject = null;
+                cameraPanel.hidden = true;
+            }
+
+            document.getElementById("selectImage").addEventListener("click", function () {
+                imageFile.click();
+            });
+            imageFile.addEventListener("change", function () {
+                if (imageFile.files && imageFile.files[0]) showImage(imageFile.files[0]);
+                imageFile.value = "";
+            });
+            cameraFileInput.addEventListener("change", function () {
+                if (cameraFileInput.files && cameraFileInput.files[0]) showImage(cameraFileInput.files[0]);
+                cameraFileInput.value = "";
+            });
+            document.getElementById("cameraFileButton").addEventListener("click", function () {
+                cameraFileInput.click();
+            });
+
+            document.getElementById("openCamera").addEventListener("click", async function () {
+                cameraFallback.hidden = true;
+                if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+                    cameraMessage.textContent = "Live camera access is not available here. Try the device camera picker instead.";
+                    cameraFallback.hidden = false;
+                    return;
+                }
+                try {
+                    activeStream = await navigator.mediaDevices.getUserMedia({
+                        audio: false,
+                        video: { facingMode: { ideal: "environment" } }
+                    });
+                    cameraPreview.srcObject = activeStream;
+                    cameraPanel.hidden = false;
+                    cameraPanel.scrollIntoView({ behavior: "smooth", block: "nearest" });
+                } catch (error) {
+                    console.error("Unable to open the camera:", error);
+                    cameraMessage.textContent = error.name === "NotAllowedError"
+                        ? "Camera permission was denied. Allow access in your browser or use the device camera picker."
+                        : "The camera could not be opened. Try the device camera picker or upload an image.";
+                    cameraFallback.hidden = false;
+                }
+            });
+
+            document.getElementById("captureImage").addEventListener("click", function () {
+                const canvas = document.getElementById("captureCanvas");
+                if (!cameraPreview.videoWidth || !cameraPreview.videoHeight) {
+                    showResult("Camera is not ready", "Wait for the camera preview, then try capturing again.", true);
+                    return;
+                }
+                canvas.width = cameraPreview.videoWidth;
+                canvas.height = cameraPreview.videoHeight;
+                canvas.getContext("2d").drawImage(cameraPreview, 0, 0, canvas.width, canvas.height);
+                canvas.toBlob(function (blob) {
+                    if (!blob) {
+                        showResult("Capture failed", "The camera image could not be captured. Please try again.", true);
+                        return;
+                    }
+                    showImage(new File([blob], "camera-capture.jpg", { type: "image/jpeg" }));
+                }, "image/jpeg", .92);
+            });
+            document.getElementById("closeCamera").addEventListener("click", stopCamera);
+            document.getElementById("classifyImage").addEventListener("click", function () {
+                showResult(
+                    "Image received",
+                    "The image is ready, but automated predictions are not available because this project does not currently include a trained classification model or classification service.",
+                    true
+                );
+            });
+            window.addEventListener("pagehide", stopCamera);
+        }());
+    </script>
+</body>
+</html>
