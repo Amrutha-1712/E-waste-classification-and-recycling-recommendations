@@ -178,8 +178,10 @@
         .button-primary:hover { box-shadow: 0 10px 24px rgba(168,255,120,.2); }
         .button:disabled { opacity: .55; cursor: not-allowed; transform: none; }
         .camera-panel, .preview-card, .result { margin-top: 20px; }
-        .camera-panel[hidden], .preview-card[hidden], .result[hidden], .camera-fallback[hidden] { display: none; }
+        .camera-panel[hidden], .preview-card[hidden], .result[hidden], .camera-status[hidden] { display: none; }
         .camera-panel { padding: 18px; border: 1px solid var(--line); border-radius: 16px; background: rgba(17,28,21,.75); }
+        .camera-status { margin: 12px 0 0; color: var(--muted); font-size: 13px; }
+        .camera-status.error { color: #ffb28f; }
         .camera-panel video, .preview-image {
             width: 100%;
             max-height: 460px;
@@ -189,7 +191,6 @@
             background: #050805;
         }
         .camera-controls { margin-top: 14px; display: flex; flex-wrap: wrap; gap: 10px; }
-        .camera-fallback { margin: 12px 0 0; color: var(--muted); font-size: 13px; }
         .preview-heading { margin: 0 0 12px; color: var(--muted); font-size: 13px; }
         .preview-image { max-height: 420px; }
         .preview-name { margin: 11px 0 0; overflow-wrap: anywhere; color: var(--muted); font-size: 13px; }
@@ -253,10 +254,7 @@
                 <h2>Use your camera</h2>
                 <p>Open your camera, frame the component, and capture a clear image.</p>
                 <button class="button button-primary" id="openCamera" type="button">Open camera</button>
-                <div class="camera-fallback" id="cameraFallback" hidden>
-                    <p id="cameraMessage" role="status"></p>
-                    <button class="button" id="cameraFileButton" type="button">Take a photo with this device</button>
-                </div>
+                <p class="camera-status" id="cameraStatus" role="status" aria-live="polite" hidden></p>
             </article>
             <article class="choice-card">
                 <div class="choice-icon" aria-hidden="true">▧</div>
@@ -294,24 +292,22 @@
     <script>
         (function () {
             const imageFile = document.getElementById("imageFile");
-            const cameraFileInput = document.createElement("input");
-            cameraFileInput.type = "file";
-            cameraFileInput.accept = "image/*";
-            cameraFileInput.capture = "environment";
-            cameraFileInput.className = "sr-only";
-            cameraFileInput.tabIndex = -1;
-            document.body.appendChild(cameraFileInput);
-
             const cameraPanel = document.getElementById("cameraPanel");
             const cameraPreview = document.getElementById("cameraPreview");
             const previewCard = document.getElementById("previewCard");
             const imagePreview = document.getElementById("imagePreview");
             const imageName = document.getElementById("imageName");
             const result = document.getElementById("result");
-            const cameraFallback = document.getElementById("cameraFallback");
-            const cameraMessage = document.getElementById("cameraMessage");
+            const cameraStatus = document.getElementById("cameraStatus");
+            const openCameraButton = document.getElementById("openCamera");
             let activeStream = null;
             let currentImageUrl = null;
+
+            function setCameraStatus(message, isError) {
+                cameraStatus.textContent = message;
+                cameraStatus.classList.toggle("error", Boolean(isError));
+                cameraStatus.hidden = !message;
+            }
 
             function showImage(file) {
                 if (!file || !file.type.startsWith("image/")) {
@@ -351,35 +347,43 @@
                 if (imageFile.files && imageFile.files[0]) showImage(imageFile.files[0]);
                 imageFile.value = "";
             });
-            cameraFileInput.addEventListener("change", function () {
-                if (cameraFileInput.files && cameraFileInput.files[0]) showImage(cameraFileInput.files[0]);
-                cameraFileInput.value = "";
-            });
-            document.getElementById("cameraFileButton").addEventListener("click", function () {
-                cameraFileInput.click();
-            });
-
-            document.getElementById("openCamera").addEventListener("click", async function () {
-                cameraFallback.hidden = true;
-                if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-                    cameraMessage.textContent = "Live camera access is not available here. Try the device camera picker instead.";
-                    cameraFallback.hidden = false;
+            openCameraButton.addEventListener("click", async function () {
+                setCameraStatus("", false);
+                if (!window.isSecureContext) {
+                    setCameraStatus("Camera access requires a secure page. Open this site using localhost or HTTPS.", true);
                     return;
                 }
+                if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+                    setCameraStatus("This browser does not support live camera access. Try a current browser over localhost or HTTPS.", true);
+                    return;
+                }
+
+                openCameraButton.disabled = true;
+                openCameraButton.textContent = "Opening camera…";
                 try {
-                    activeStream = await navigator.mediaDevices.getUserMedia({
-                        audio: false,
-                        video: { facingMode: { ideal: "environment" } }
-                    });
-                    cameraPreview.srcObject = activeStream;
+                    const stream = await navigator.mediaDevices.getUserMedia({ audio: false, video: true });
+                    activeStream = stream;
+                    cameraPreview.srcObject = stream;
+                    await cameraPreview.play();
                     cameraPanel.hidden = false;
                     cameraPanel.scrollIntoView({ behavior: "smooth", block: "nearest" });
                 } catch (error) {
                     console.error("Unable to open the camera:", error);
-                    cameraMessage.textContent = error.name === "NotAllowedError"
-                        ? "Camera permission was denied. Allow access in your browser or use the device camera picker."
-                        : "The camera could not be opened. Try the device camera picker or upload an image.";
-                    cameraFallback.hidden = false;
+                    stopCamera();
+                    const messages = {
+                        NotAllowedError: "Camera permission was blocked. Allow camera access for this site in your browser's address-bar or site settings, then try again.",
+                        NotFoundError: "No camera was found. Connect a camera and try again.",
+                        NotReadableError: "The camera is already in use or unavailable. Close other apps using it and try again.",
+                        OverconstrainedError: "The camera cannot meet this browser's requested settings. Check the connected camera and try again.",
+                        SecurityError: "Camera access was blocked by the browser. Open this site using localhost or HTTPS and check site permissions."
+                    };
+                    setCameraStatus(
+                        messages[error.name] || "The camera could not be opened. Check that a camera is connected and allowed for this site, then try again.",
+                        true
+                    );
+                } finally {
+                    openCameraButton.disabled = false;
+                    openCameraButton.textContent = "Open camera";
                 }
             });
 
