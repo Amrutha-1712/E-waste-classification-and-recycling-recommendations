@@ -177,6 +177,7 @@
         .button-primary { color: #101a0c; border-color: var(--green); background: var(--green); }
         .button-primary:hover { box-shadow: 0 10px 24px rgba(168,255,120,.2); }
         .button:disabled { opacity: .55; cursor: not-allowed; transform: none; }
+        .button[hidden] { display: none; }
         .camera-panel, .preview-card, .result { margin-top: 20px; }
         .camera-panel[hidden], .preview-card[hidden], .result[hidden], .camera-status[hidden] { display: none; }
         .camera-panel { padding: 18px; border: 1px solid var(--line); border-radius: 16px; background: rgba(17,28,21,.75); }
@@ -254,6 +255,8 @@
                 <h2>Use your camera</h2>
                 <p>Open your camera, frame the component, and capture a clear image.</p>
                 <button class="button button-primary" id="openCamera" type="button">Open camera</button>
+                <button class="button" id="deviceCamera" type="button" hidden>Take photo with device camera</button>
+                <input class="sr-only" id="cameraFile" type="file" accept="image/*" capture="environment">
                 <p class="camera-status" id="cameraStatus" role="status" aria-live="polite" hidden></p>
             </article>
             <article class="choice-card">
@@ -292,6 +295,7 @@
     <script>
         (function () {
             const imageFile = document.getElementById("imageFile");
+            const cameraFile = document.getElementById("cameraFile");
             const cameraPanel = document.getElementById("cameraPanel");
             const cameraPreview = document.getElementById("cameraPreview");
             const previewCard = document.getElementById("previewCard");
@@ -300,6 +304,7 @@
             const result = document.getElementById("result");
             const cameraStatus = document.getElementById("cameraStatus");
             const openCameraButton = document.getElementById("openCamera");
+            const deviceCameraButton = document.getElementById("deviceCamera");
             let activeStream = null;
             let currentImageUrl = null;
 
@@ -343,18 +348,28 @@
             document.getElementById("selectImage").addEventListener("click", function () {
                 imageFile.click();
             });
+            deviceCameraButton.addEventListener("click", function () {
+                cameraFile.click();
+            });
+            cameraFile.addEventListener("change", function () {
+                if (cameraFile.files && cameraFile.files[0]) showImage(cameraFile.files[0]);
+                cameraFile.value = "";
+            });
             imageFile.addEventListener("change", function () {
                 if (imageFile.files && imageFile.files[0]) showImage(imageFile.files[0]);
                 imageFile.value = "";
             });
             openCameraButton.addEventListener("click", async function () {
                 setCameraStatus("", false);
+                deviceCameraButton.hidden = true;
                 if (!window.isSecureContext) {
-                    setCameraStatus("Camera access requires a secure page. Open this site using localhost or HTTPS.", true);
+                    setCameraStatus("Live camera access requires HTTPS or localhost. You can still try your device's camera capture below.", true);
+                    deviceCameraButton.hidden = false;
                     return;
                 }
                 if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-                    setCameraStatus("This browser does not support live camera access. Try a current browser over localhost or HTTPS.", true);
+                    setCameraStatus("This browser does not support live camera preview. You can still try your device's camera capture below.", true);
+                    deviceCameraButton.hidden = false;
                     return;
                 }
 
@@ -371,16 +386,17 @@
                     console.error("Unable to open the camera:", error);
                     stopCamera();
                     const messages = {
-                        NotAllowedError: "Camera permission was blocked. Allow camera access for this site in your browser's address-bar or site settings, then try again.",
-                        NotFoundError: "No camera was found. Connect a camera and try again.",
-                        NotReadableError: "The camera is already in use or unavailable. Close other apps using it and try again.",
-                        OverconstrainedError: "The camera cannot meet this browser's requested settings. Check the connected camera and try again.",
-                        SecurityError: "Camera access was blocked by the browser. Open this site using localhost or HTTPS and check site permissions."
+                        NotAllowedError: "Live camera access was blocked. Allow camera permission in your browser, or try your device's camera capture below.",
+                        NotFoundError: "No live camera was detected. Try your device's camera capture below, if supported.",
+                        NotReadableError: "The live camera is in use or unavailable. Close other apps using it, or try your device's camera capture below.",
+                        OverconstrainedError: "The live camera is unavailable with these settings. Try your device's camera capture below.",
+                        SecurityError: "Live camera access was blocked by the browser. Use HTTPS or localhost, or try your device's camera capture below."
                     };
                     setCameraStatus(
-                        messages[error.name] || "The camera could not be opened. Check that a camera is connected and allowed for this site, then try again.",
+                        messages[error.name] || "The live camera could not be opened. Check your camera and browser permissions, or try your device's camera capture below.",
                         true
                     );
+                    deviceCameraButton.hidden = false;
                 } finally {
                     openCameraButton.disabled = false;
                     openCameraButton.textContent = "Open camera";

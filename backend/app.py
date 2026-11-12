@@ -123,6 +123,11 @@ def login_page():
 def classify_page():
     return render_template('classify.html')
 
+@app.route('/components')
+@app.route('/components.html')
+def components_page():
+    return render_template('components.html')
+
 
 def find_user_by_email(users, email):
     normalized_email = email.strip().lower()

@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Explore the 26 laptop component classes supported by CircuitCycle's classification dataset.">
+    <meta name="theme-color" content="#080d0a">
+    <title>Supported Components | CircuitCycle</title>
+    <style>
+        :root {
+            color-scheme: dark;
+            --bg: #080d0a;
+            --panel: rgba(17, 28, 21, .82);
+            --green: #a8ff78;
+            --white: #f5fff5;
+            --muted: #a6b8aa;
+            --line: rgba(168, 255, 120, .22);
+        }
+        * { box-sizing: border-box; }
+        body {
+            min-height: 100vh;
+            margin: 0;
+            color: var(--white);
+            font-family: Inter, "Segoe UI", Arial, sans-serif;
+            line-height: 1.6;
+            background:
+                radial-gradient(circle at 13% 8%, rgba(168,255,120,.12), transparent 28%),
+                radial-gradient(circle at 88% 18%, rgba(120,242,154,.08), transparent 27%),
+                var(--bg);
+        }
+        a { color: inherit; text-decoration: none; }
+        a:focus-visible { outline: 2px solid var(--green); outline-offset: 4px; }
+        .container { width: min(1120px, 90%); margin: auto; }
+        header {
+            position: sticky;
+            top: 12px;
+            z-index: 1;
+            width: min(1120px, 92%);
+            margin: 12px auto 0;
+            padding: 11px 16px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+            border: 1px solid var(--line);
+            border-radius: 14px;
+            background: rgba(7, 14, 9, .92);
+        }
+        .brand { font-size: 19px; font-weight: 800; }
+        .brand span { color: var(--green); }
+        .back-link { color: var(--muted); font-size: 14px; }
+        .back-link:hover { color: var(--green); }
+        main { padding: 75px 0 90px; }
+        .eyebrow { color: var(--green); font-size: 11px; font-weight: 800; letter-spacing: 2px; }
+        h1 { margin: 12px 0; font-size: clamp(36px, 6vw, 62px); line-height: 1.05; letter-spacing: -2px; }
+        .intro { max-width: 760px; }
+        .intro p { color: var(--muted); line-height: 1.8; }
+        .notice {
+            margin-top: 24px;
+            padding: 15px 18px;
+            color: var(--white);
+            border: 1px solid var(--line);
+            border-radius: 10px;
+            background: rgba(168,255,120,.055);
+        }
+        .component-grid {
+            margin-top: 35px;
+            display: grid;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: 14px;
+        }
+        .component-card {
+            min-height: 100px;
+            padding: 19px;
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            border: 1px solid var(--line);
+            border-radius: 11px;
+            background: linear-gradient(145deg, rgba(168,255,120,.07), rgba(255,255,255,.012));
+            transition: transform .2s, border-color .2s;
+        }
+        .component-card:hover { transform: translateY(-3px); border-color: rgba(168,255,120,.58); }
+        .component-number {
+            width: 38px;
+            height: 38px;
+            flex: 0 0 38px;
+            display: grid;
+            place-items: center;
+            color: var(--green);
+            font-size: 13px;
+            font-weight: 800;
+            border: 1px solid var(--line);
+            border-radius: 8px;
+            background: rgba(168,255,120,.06);
+        }
+        .component-card h2 { margin: 0; font-size: 15px; overflow-wrap: anywhere; }
+        .actions { margin-top: 35px; display: flex; flex-wrap: wrap; gap: 12px; }
+        .button {
+            padding: 12px 17px;
+            color: #101a0c;
+            font-weight: 800;
+            border: 1px solid var(--green);
+            border-radius: 8px;
+            background: var(--green);
+        }
+        .button-secondary { color: var(--white); border-color: var(--line); background: transparent; }
+        @media (max-width: 850px) { .component-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+        @media (max-width: 600px) {
+            header { width: 94%; }
+            .container { width: 90%; }
+            main { padding-top: 55px; }
+            .component-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+            .component-card { min-height: 86px; padding: 13px 10px; gap: 9px; }
+            .component-card h2 { font-size: 13px; }
+            .component-number { width: 32px; height: 32px; flex-basis: 32px; }
+        }
+        @media (max-width: 360px) {
+            .component-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <a href="/" class="brand" aria-label="CircuitCycle home"><span>Circuit</span>Cycle</a>
+        <a href="/" class="back-link">← Back to home</a>
+    </header>
+    <main class="container">
+        <div class="intro">
+            <span class="eyebrow">CLASSIFICATION LIBRARY · 26 CLASSES</span>
+            <h1>Supported Laptop Components</h1>
+            <p>These are the 26 component types included in the classification dataset.</p>
+        </div>
+        <div class="notice" role="note">For the most reliable result, upload or capture a clear image of one of the components listed below.</div>
+        <section class="component-grid" aria-label="All 26 supported laptop components">
+            <article class="component-card"><span class="component-number">01</span><h2>Battery</h2></article>
+            <article class="component-card"><span class="component-number">02</span><h2>DVDRom</h2></article>
+            <article class="component-card"><span class="component-number">03</span><h2>Hinge</h2></article>
+            <article class="component-card"><span class="component-number">04</span><h2>Keyboard</h2></article>
+            <article class="component-card"><span class="component-number">05</span><h2>Motherboard</h2></article>
+            <article class="component-card"><span class="component-number">06</span><h2>DCCable</h2></article>
+            <article class="component-card"><span class="component-number">07</span><h2>PowerSwitch</h2></article>
+            <article class="component-card"><span class="component-number">08</span><h2>RAM</h2></article>
+            <article class="component-card"><span class="component-number">09</span><h2>ScrewKit</h2></article>
+            <article class="component-card"><span class="component-number">10</span><h2>USBPort</h2></article>
+            <article class="component-card"><span class="component-number">11</span><h2>WifiCard</h2></article>
+            <article class="component-card"><span class="component-number">12</span><h2>Speaker</h2></article>
+            <article class="component-card"><span class="component-number">13</span><h2>CMOSBattery</h2></article>
+            <article class="component-card"><span class="component-number">14</span><h2>HardDiskDrive</h2></article>
+            <article class="component-card"><span class="component-number">15</span><h2>WebCam</h2></article>
+            <article class="component-card"><span class="component-number">16</span><h2>LCDScreen</h2></article>
+            <article class="component-card"><span class="component-number">17</span><h2>Bezel</h2></article>
+            <article class="component-card"><span class="component-number">18</span><h2>HeatSink</h2></article>
+            <article class="component-card"><span class="component-number">19</span><h2>SSD</h2></article>
+            <article class="component-card"><span class="component-number">20</span><h2>CPUFan</h2></article>
+            <article class="component-card"><span class="component-number">21</span><h2>TouchPad</h2></article>
+            <article class="component-card"><span class="component-number">22</span><h2>Processor</h2></article>
+            <article class="component-card"><span class="component-number">23</span><h2>RAMCover</h2></article>
+            <article class="component-card"><span class="component-number">24</span><h2>BasePanel</h2></article>
+            <article class="component-card"><span class="component-number">25</span><h2>TopPanel</h2></article>
+            <article class="component-card"><span class="component-number">26</span><h2>LVDSCable</h2></article>
+        </section>
+        <div class="actions">
+            <a class="button" href="/classify">Open camera or upload image →</a>
+            <a class="button button-secondary" href="/">Back to home</a>
+        </div>
+    </main>
+</body>
+</html>
