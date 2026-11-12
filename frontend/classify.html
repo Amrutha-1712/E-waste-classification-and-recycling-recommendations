@@ -255,8 +255,6 @@
                 <h2>Use your camera</h2>
                 <p>Open your camera, frame the component, and capture a clear image.</p>
                 <button class="button button-primary" id="openCamera" type="button">Open camera</button>
-                <button class="button" id="deviceCamera" type="button" hidden>Take photo with device camera</button>
-                <input class="sr-only" id="cameraFile" type="file" accept="image/*" capture="environment">
                 <p class="camera-status" id="cameraStatus" role="status" aria-live="polite" hidden></p>
             </article>
             <article class="choice-card">
@@ -295,7 +293,6 @@
     <script>
         (function () {
             const imageFile = document.getElementById("imageFile");
-            const cameraFile = document.getElementById("cameraFile");
             const cameraPanel = document.getElementById("cameraPanel");
             const cameraPreview = document.getElementById("cameraPreview");
             const previewCard = document.getElementById("previewCard");
@@ -304,7 +301,6 @@
             const result = document.getElementById("result");
             const cameraStatus = document.getElementById("cameraStatus");
             const openCameraButton = document.getElementById("openCamera");
-            const deviceCameraButton = document.getElementById("deviceCamera");
             let activeStream = null;
             let currentImageUrl = null;
 
@@ -348,55 +344,63 @@
             document.getElementById("selectImage").addEventListener("click", function () {
                 imageFile.click();
             });
-            deviceCameraButton.addEventListener("click", function () {
-                cameraFile.click();
-            });
-            cameraFile.addEventListener("change", function () {
-                if (cameraFile.files && cameraFile.files[0]) showImage(cameraFile.files[0]);
-                cameraFile.value = "";
-            });
             imageFile.addEventListener("change", function () {
                 if (imageFile.files && imageFile.files[0]) showImage(imageFile.files[0]);
                 imageFile.value = "";
             });
             openCameraButton.addEventListener("click", async function () {
                 setCameraStatus("", false);
-                deviceCameraButton.hidden = true;
                 if (!window.isSecureContext) {
-                    setCameraStatus("Live camera access requires HTTPS or localhost. You can still try your device's camera capture below.", true);
-                    deviceCameraButton.hidden = false;
+                    setCameraStatus("Camera access requires HTTPS or localhost. Open this site at http://localhost:5000 or use HTTPS.", true);
                     return;
                 }
                 if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-                    setCameraStatus("This browser does not support live camera preview. You can still try your device's camera capture below.", true);
-                    deviceCameraButton.hidden = false;
+                    setCameraStatus("This browser does not support live camera access. Open this page in a current version of Chrome, Edge, or Firefox.", true);
                     return;
+                }
+
+                if (navigator.permissions && navigator.permissions.query) {
+                    try {
+                        const permission = await navigator.permissions.query({ name: "camera" });
+                        if (permission.state === "denied") {
+                            setCameraStatus(
+                                "Camera access is blocked for this site. In Chrome, click the site controls icon beside the address, open Site settings, set Camera to Allow, then reload this page and click Open camera. Also check Windows Settings > Privacy & security > Camera if it is still blocked.",
+                                true
+                            );
+                            return;
+                        }
+                    } catch (error) {
+                        if (!(error instanceof TypeError)) {
+                            console.warn("Unable to check camera permission; requesting camera access directly:", error);
+                        }
+                    }
                 }
 
                 openCameraButton.disabled = true;
                 openCameraButton.textContent = "Opening camera…";
+                setCameraStatus("Allow camera access in the browser prompt to start the camera.", false);
                 try {
                     const stream = await navigator.mediaDevices.getUserMedia({ audio: false, video: true });
                     activeStream = stream;
                     cameraPreview.srcObject = stream;
                     await cameraPreview.play();
                     cameraPanel.hidden = false;
+                    setCameraStatus("", false);
                     cameraPanel.scrollIntoView({ behavior: "smooth", block: "nearest" });
                 } catch (error) {
                     console.error("Unable to open the camera:", error);
                     stopCamera();
                     const messages = {
-                        NotAllowedError: "Live camera access was blocked. Allow camera permission in your browser, or try your device's camera capture below.",
-                        NotFoundError: "No live camera was detected. Try your device's camera capture below, if supported.",
-                        NotReadableError: "The live camera is in use or unavailable. Close other apps using it, or try your device's camera capture below.",
-                        OverconstrainedError: "The live camera is unavailable with these settings. Try your device's camera capture below.",
-                        SecurityError: "Live camera access was blocked by the browser. Use HTTPS or localhost, or try your device's camera capture below."
+                        NotAllowedError: "Camera permission is blocked. In Chrome, click the site controls icon beside the address, open Site settings, set Camera to Allow, then reload this page and click Open camera.",
+                        NotFoundError: "No camera was found. Connect or enable a camera, then click Open camera again.",
+                        NotReadableError: "The camera is already in use or unavailable. Close other apps using it, then click Open camera again.",
+                        OverconstrainedError: "The camera is unavailable with the requested settings. Check the connected camera, then try again.",
+                        SecurityError: "The browser blocked camera access. Open this page on localhost or HTTPS and allow camera access in Site settings."
                     };
                     setCameraStatus(
-                        messages[error.name] || "The live camera could not be opened. Check your camera and browser permissions, or try your device's camera capture below.",
+                        messages[error.name] || "The camera could not be opened. Check that it is connected and allow this site to use it in your browser's Site settings.",
                         true
                     );
-                    deviceCameraButton.hidden = false;
                 } finally {
                     openCameraButton.disabled = false;
                     openCameraButton.textContent = "Open camera";
