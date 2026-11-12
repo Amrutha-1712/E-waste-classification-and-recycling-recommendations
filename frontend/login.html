@@ -3,15 +3,25 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-    <title>E-Waste Recycling - Login</title>
+    <meta name="theme-color" content="#080d0a">
+    <title>CircuitCycle | Log In</title>
 
     <style>
+        :root {
+            --bg: #080d0a;
+            --green: #a8ff78;
+            --bright: #78f29a;
+            --pale: #d7ffb8;
+            --white: #f5fff5;
+            --muted: #a6b8aa;
+            --line: rgba(168,255,120,.25);
+        }
+
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
-            font-family: Arial, sans-serif;
+            font-family: "Segoe UI", Arial, sans-serif;
         }
 
         body {
@@ -19,310 +29,814 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            background: linear-gradient(135deg, #dfffe8, #b7e4c7, #74c69d);
+            padding: 100px 20px 40px;
+            color: var(--white);
+            background: var(--bg);
+            overflow-x: hidden;
         }
 
-        .container {
-            width: 900px;
-            max-width: 95%;
-            min-height: 520px;
-            display: flex;
-            background: white;
-            border-radius: 20px;
+        a { color: inherit; text-decoration: none; }
+        button, input { font: inherit; }
+        button:focus-visible, a:focus-visible, input:focus-visible {
+            outline: 2px solid var(--green);
+            outline-offset: 3px;
+        }
+
+        .background {
+            position: fixed;
+            inset: 0;
+            z-index: 0;
             overflow: hidden;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            pointer-events: none;
+            background:
+                radial-gradient(circle at 15% 15%, #183522 0, transparent 30%),
+                radial-gradient(circle at 90% 85%, #123b25 0, transparent 35%),
+                var(--bg);
         }
 
-        /* Left side */
-        .left {
-            width: 50%;
-            background: linear-gradient(135deg, #1b5e20, #2e7d32);
-            color: white;
+        .background::before {
+            content: "";
+            position: absolute;
+            inset: -100%;
+            opacity: .32;
+            background-image:
+                linear-gradient(rgba(168,255,120,.06) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(168,255,120,.06) 1px, transparent 1px);
+            background-size: 55px 55px;
+            animation: gridMove 25s linear infinite;
+        }
+
+        @keyframes gridMove { to { transform: translate(55px,55px); } }
+
+        .orb {
+            position: absolute;
+            width: 340px;
+            height: 340px;
+            border-radius: 50%;
+            filter: blur(100px);
+            opacity: .2;
+        }
+
+        .orb-one {
+            top: -150px;
+            left: -100px;
+            background: var(--green);
+            animation: floatOne 10s ease-in-out infinite alternate;
+        }
+
+        .orb-two {
+            right: -130px;
+            bottom: -140px;
+            background: #00ffa3;
+            animation: floatTwo 12s ease-in-out infinite alternate;
+        }
+
+        @keyframes floatOne { to { transform: translate(180px,140px) scale(1.2); } }
+        @keyframes floatTwo { to { transform: translate(-140px,-120px) scale(1.15); } }
+
+        .particles span {
+            position: absolute;
+            width: 4px;
+            height: 4px;
+            border-radius: 50%;
+            background: var(--green);
+            box-shadow: 0 0 14px var(--green);
+            animation: particleFloat 6s ease-in-out infinite;
+        }
+
+        .particles span:nth-child(1) { top: 15%; left: 12%; }
+        .particles span:nth-child(2) { top: 25%; right: 18%; animation-delay: -2s; }
+        .particles span:nth-child(3) { top: 65%; left: 9%; animation-delay: -3s; }
+        .particles span:nth-child(4) { top: 78%; right: 12%; animation-delay: -1s; }
+        .particles span:nth-child(5) { top: 48%; left: 48%; animation-delay: -4s; }
+        .particles span:nth-child(6) { top: 10%; right: 43%; animation-delay: -2.5s; }
+
+        @keyframes particleFloat {
+            50% { opacity: .2; transform: translateY(-25px) scale(.6); }
+        }
+
+        .circuit {
+            position: absolute;
+            width: 300px;
+            height: 1px;
+            background: linear-gradient(90deg,transparent,var(--green),transparent);
+            opacity: .5;
+        }
+
+        .circuit::after {
+            content: "";
+            position: absolute;
+            top: -3px;
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: var(--green);
+            box-shadow: 0 0 14px var(--green);
+            animation: circuitRun 3s linear infinite;
+        }
+
+        .circuit-one { top: 28%; left: -70px; transform: rotate(25deg); }
+        .circuit-two { right: -60px; bottom: 25%; transform: rotate(-25deg); }
+
+        @keyframes circuitRun {
+            from { left: 0; opacity: 0; }
+            40%,70% { opacity: 1; }
+            to { left: 100%; opacity: 0; }
+        }
+
+        .navbar {
+            position: absolute;
+            top: 18px;
+            left: 50%;
+            z-index: 2;
+            width: min(1100px,94%);
+            padding: 12px 18px;
             display: flex;
-            flex-direction: column;
-            justify-content: center;
             align-items: center;
-            text-align: center;
-            padding: 40px;
+            justify-content: space-between;
+            gap: 15px;
+            transform: translateX(-50%);
+            border: 1px solid var(--line);
+            border-radius: 15px;
+            background: rgba(8,15,10,.85);
+            backdrop-filter: blur(18px);
+            box-shadow: 0 10px 40px rgba(0,0,0,.25);
+            animation: slideDown .8s ease both;
         }
 
-        .left .icon {
-            font-size: 75px;
-            margin-bottom: 20px;
+        @keyframes slideDown {
+            from { opacity: 0; transform: translate(-50%,-20px); }
+            to { opacity: 1; transform: translate(-50%,0); }
         }
 
-        .left h1 {
-            font-size: 32px;
-            margin-bottom: 15px;
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 20px;
+            font-weight: 800;
+            white-space: nowrap;
         }
 
-        .left p {
-            font-size: 16px;
-            line-height: 1.6;
+        .brand-mark {
+            width: 38px;
+            height: 38px;
+            display: grid;
+            place-items: center;
+            border: 1px solid var(--green);
+            border-radius: 10px;
+            color: var(--green);
+            font-size: 25px;
+            animation: logoPulse 3s ease-in-out infinite;
         }
 
-        .tagline {
-            margin-top: 25px;
-            font-size: 14px;
-            opacity: 0.9;
+        .brand-name span { color: var(--green); }
+        @keyframes logoPulse { 50% { box-shadow: 0 0 25px rgba(168,255,120,.35); } }
+
+        .back-link {
+            color: var(--muted);
+            font-size: 13px;
+            transition: .3s;
         }
 
-        /* Right side */
-        .right {
-            width: 50%;
-            padding: 50px 45px;
+        .back-link:hover { color: var(--green); }
+
+        .login-container {
+            position: relative;
+            z-index: 1;
+            width: min(1000px,100%);
+            min-height: 610px;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            overflow: hidden;
+            border: 1px solid var(--line);
+            border-radius: 24px;
+            background: rgba(15,25,18,.84);
+            backdrop-filter: blur(20px);
+            box-shadow: 0 30px 100px rgba(0,0,0,.48);
+            animation: cardAppear 1s .15s ease both;
+        }
+
+        @keyframes cardAppear {
+            from { opacity: 0; transform: translateY(35px) scale(.98); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+
+        .welcome-section {
+            position: relative;
+            overflow: hidden;
+            padding: 45px;
             display: flex;
             flex-direction: column;
+            align-items: center;
             justify-content: center;
+            text-align: center;
+            background:
+                radial-gradient(circle at 50% 45%,rgba(168,255,120,.13),transparent 48%),
+                linear-gradient(145deg,rgba(168,255,120,.07),rgba(255,255,255,.01));
+            border-right: 1px solid rgba(168,255,120,.13);
         }
 
-        .right h2 {
-            color: #1b5e20;
-            font-size: 30px;
-            margin-bottom: 10px;
+        .welcome-section::before {
+            content: "";
+            position: absolute;
+            inset: 15px;
+            border: 1px solid rgba(168,255,120,.09);
+            border-radius: 15px;
+            pointer-events: none;
         }
 
-        .welcome {
-            color: #666;
-            margin-bottom: 30px;
+        .welcome-content { position: relative; z-index: 1; }
+
+        .welcome-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 26px;
+            padding: 8px 12px;
+            color: var(--bright);
+            font-size: 10px;
+            font-weight: 800;
+            letter-spacing: 1.7px;
+            border: 1px solid var(--line);
+            border-radius: 5px;
+            background: rgba(168,255,120,.05);
         }
 
-        .input-box {
-            margin-bottom: 20px;
+        .welcome-badge::before {
+            content: "";
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: var(--bright);
+            box-shadow: 0 0 12px var(--bright);
+            animation: blink 1.5s infinite;
         }
+
+        @keyframes blink { 50% { opacity: .25; transform: scale(.6); } }
+
+        .logo-circle {
+            width: 112px;
+            height: 112px;
+            margin: 0 auto 25px;
+            display: grid;
+            place-items: center;
+            border: 1px solid var(--green);
+            border-radius: 50%;
+            color: var(--green);
+            font-size: 58px;
+            background: rgba(168,255,120,.06);
+            box-shadow: 0 0 35px rgba(168,255,120,.13),inset 0 0 25px rgba(168,255,120,.06);
+            animation: logoFloat 4s ease-in-out infinite;
+        }
+
+        @keyframes logoFloat {
+            50% { transform: translateY(-10px) rotate(5deg); box-shadow: 0 0 48px rgba(168,255,120,.25); }
+        }
+
+        .welcome-section h1 {
+            margin-bottom: 17px;
+            font-size: clamp(32px,4vw,46px);
+            line-height: 1.1;
+            letter-spacing: -1.8px;
+        }
+
+        .welcome-section h1 span { color: var(--green); }
+
+        .welcome-section p {
+            max-width: 360px;
+            color: var(--muted);
+            font-size: 14px;
+            line-height: 1.9;
+        }
+
+        .eco-badge {
+            margin-top: 27px;
+            padding: 11px 17px;
+            display: inline-block;
+            color: var(--pale);
+            font-size: 12px;
+            border: 1px solid var(--line);
+            border-radius: 8px;
+            background: rgba(168,255,120,.045);
+            animation: badgeGlow 3s ease-in-out infinite;
+        }
+
+        @keyframes badgeGlow { 50% { box-shadow: 0 0 20px rgba(168,255,120,.12); } }
+
+        .welcome-decoration {
+            position: absolute;
+            width: 210px;
+            height: 210px;
+            right: -115px;
+            bottom: -115px;
+            border: 1px solid rgba(168,255,120,.16);
+            border-radius: 50%;
+            box-shadow: 0 0 0 25px rgba(168,255,120,.025),0 0 0 50px rgba(168,255,120,.02);
+        }
+
+        .form-section {
+            padding: 42px;
+            background: rgba(9,16,11,.7);
+        }
+
+        .form-header { margin-bottom: 22px; }
+
+        .eyebrow {
+            color: var(--green);
+            font-size: 10px;
+            font-weight: 800;
+            letter-spacing: 2px;
+        }
+
+        .form-header h2 {
+            margin: 8px 0;
+            font-size: 34px;
+            letter-spacing: -1px;
+        }
+
+        .subtitle { color: var(--muted); font-size: 13px; line-height: 1.6; }
+        .google-btn, .login-btn { width: 100%; min-height: 48px; }
+
+        .google-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 11px;
+            padding: 12px;
+            color: #e9f2ea;
+            font-size: 13px;
+            font-weight: 700;
+            border: 1px solid rgba(255,255,255,.18);
+            border-radius: 9px;
+            background: rgba(255,255,255,.045);
+            cursor: pointer;
+            transition: .3s;
+        }
+
+        .google-btn:hover {
+            border-color: var(--green);
+            background: rgba(168,255,120,.07);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(168,255,120,.08);
+        }
+
+        .google-icon { width: 19px; height: 19px; flex-shrink: 0; }
+
+        .divider {
+            display: flex;
+            align-items: center;
+            gap: 13px;
+            margin: 20px 0;
+            color: #849587;
+            font-size: 11px;
+        }
+
+        .divider::before, .divider::after {
+            content: "";
+            flex: 1;
+            height: 1px;
+            background: rgba(168,255,120,.14);
+        }
+
+        .input-box { margin-bottom: 15px; }
 
         .input-box label {
             display: block;
             margin-bottom: 7px;
-            color: #333;
-            font-weight: bold;
+            color: #d8e8da;
+            font-size: 12px;
+            font-weight: 700;
         }
 
         .input-box input {
             width: 100%;
-            padding: 13px;
-            border: 1px solid #ccc;
+            height: 46px;
+            padding: 0 14px;
+            color: var(--white);
+            font-size: 13px;
+            border: 1px solid rgba(168,255,120,.16);
             border-radius: 8px;
-            font-size: 15px;
             outline: none;
+            background: rgba(255,255,255,.035);
+            transition: border-color .3s,box-shadow .3s,background .3s;
         }
+
+        .input-box input::placeholder { color: #718274; }
+        .input-box input:hover { border-color: rgba(168,255,120,.4); }
 
         .input-box input:focus {
-            border-color: #2e7d32;
-            box-shadow: 0 0 5px rgba(46,125,50,0.3);
+            border-color: var(--green);
+            background: rgba(168,255,120,.035);
+            box-shadow: 0 0 0 3px rgba(168,255,120,.09),0 0 18px rgba(168,255,120,.04);
         }
+
+        .password-row {
+            display: flex;
+            justify-content: flex-end;
+            margin: -7px 0 15px;
+        }
+
+        .text-button, .back-to-login {
+            padding: 0;
+            color: var(--green);
+            font-size: 12px;
+            font-weight: 700;
+            border: 0;
+            background: none;
+            cursor: pointer;
+        }
+
+        .text-button:hover, .back-to-login:hover { text-decoration: underline; }
 
         .login-btn {
-            width: 100%;
-            padding: 14px;
-            border: none;
-            border-radius: 8px;
-            background: #2e7d32;
-            color: white;
-            font-size: 17px;
-            font-weight: bold;
+            position: relative;
+            margin-top: 5px;
+            overflow: hidden;
+            color: #101a0c;
+            font-size: 14px;
+            font-weight: 800;
+            border: 1px solid var(--green);
+            border-radius: 9px;
+            background: linear-gradient(110deg,#a8ff78,#78f29a,#d7ffb8);
+            background-size: 200% 100%;
+            box-shadow: 0 8px 25px rgba(168,255,120,.13);
             cursor: pointer;
-            transition: 0.3s;
+            transition: .3s;
+            animation: buttonShimmer 5s ease infinite;
         }
 
-        .login-btn:hover {
-            background: #1b5e20;
-            transform: translateY(-2px);
+        @keyframes buttonShimmer {
+            0%,100% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
         }
+
+        .login-btn::before {
+            content: "";
+            position: absolute;
+            top: -50%;
+            left: -70%;
+            width: 45%;
+            height: 200%;
+            transform: rotate(25deg);
+            background: rgba(255,255,255,.4);
+            transition: left .55s ease;
+        }
+
+        .login-btn:hover::before { left: 130%; }
+        .login-btn:hover { transform: translateY(-3px); box-shadow: 0 12px 32px rgba(168,255,120,.25); }
+        .login-btn:active { transform: scale(.985); }
+        .login-btn:disabled { cursor: wait; opacity: .7; transform: none; }
 
         .message {
-            margin-top: 15px;
+            display: none;
+            margin-top: 12px;
+            padding: 10px;
+            color: #ffd0d0;
+            font-size: 12px;
+            line-height: 1.5;
+            border: 1px solid rgba(255,100,100,.25);
+            border-radius: 7px;
+            background: rgba(255,70,70,.06);
+        }
+
+        .message.success {
+            color: var(--pale);
+            border-color: var(--line);
+            background: rgba(168,255,120,.06);
+        }
+
+        .login-text {
+            margin-top: 20px;
+            color: var(--muted);
             text-align: center;
-            font-size: 14px;
-            font-weight: bold;
+            font-size: 12px;
         }
 
-        .register {
-            text-align: center;
-            margin-top: 25px;
-            color: #666;
-        }
+        .login-text a { color: var(--green); font-weight: 800; transition: .3s; }
+        .login-text a:hover { text-shadow: 0 0 12px var(--green); }
+        .form-panel[hidden] { display: none; }
 
-        .register a {
-            color: #2e7d32;
-            text-decoration: none;
-            font-weight: bold;
-        }
-
-        .register a:hover {
-            text-decoration: underline;
-        }
-
-        /* Mobile */
-        @media (max-width: 700px) {
-            .container {
-                flex-direction: column;
+        @media (max-width: 800px) {
+            body { padding-top: 90px; }
+            .login-container { max-width: 510px; grid-template-columns: 1fr; }
+            .welcome-section {
+                padding: 32px 25px;
+                border-right: 0;
+                border-bottom: 1px solid rgba(168,255,120,.13);
             }
+            .welcome-badge { margin-bottom: 16px; }
+            .logo-circle { width: 78px; height: 78px; margin-bottom: 16px; font-size: 43px; }
+            .welcome-section h1 { font-size: 35px; }
+            .welcome-section p { font-size: 13px; }
+            .eco-badge { margin-top: 17px; }
+            .form-section { padding: 32px; }
+        }
 
-            .left,
-            .right {
-                width: 100%;
-            }
+        @media (max-width: 480px) {
+            body { padding: 85px 13px 25px; }
+            .navbar { top: 12px; padding: 9px 11px; }
+            .brand { gap: 7px; font-size: 16px; }
+            .brand-mark { width: 32px; height: 32px; font-size: 21px; }
+            .back-link { font-size: 11px; }
+            .login-container { border-radius: 16px; }
+            .welcome-section { padding: 28px 20px; }
+            .form-section { padding: 27px 20px; }
+            .form-header h2 { font-size: 29px; }
+            .input-box { margin-bottom: 13px; }
+        }
 
-            .left {
-                padding: 30px;
-            }
-
-            .right {
-                padding: 35px 25px;
+        @media (prefers-reduced-motion: reduce) {
+            *,*::before,*::after {
+                animation-duration: .01ms !important;
+                animation-iteration-count: 1 !important;
+                scroll-behavior: auto !important;
+                transition-duration: .01ms !important;
             }
         }
     </style>
 </head>
 
 <body>
-
-    <div class="container">
-
-        <!-- LEFT SIDE -->
-        <div class="left">
-
-            <div class="icon">♻️</div>
-
-            <h1>E-Waste Care</h1>
-
-            <p>
-                E-Waste Classification &
-                Recycling Recommendation
-            </p>
-
-            <div class="tagline">
-                Classify • Reuse • Repair • Recycle
-            </div>
-
+    <div class="background" aria-hidden="true">
+        <div class="orb orb-one"></div>
+        <div class="orb orb-two"></div>
+        <div class="particles">
+            <span></span><span></span><span></span>
+            <span></span><span></span><span></span>
         </div>
-
-
-        <!-- RIGHT SIDE -->
-        <div class="right">
-
-            <h2>Welcome Back!</h2>
-
-            <p class="welcome">
-                Login to continue to your e-waste dashboard.
-            </p>
-
-
-            <form id="loginForm">
-
-                <!-- Username / Email -->
-                <div class="input-box">
-                    <label for="username">Username or Email</label>
-
-                    <input
-                        type="text"
-                        id="username"
-                        placeholder="Enter your username or email"
-                        required
-                    >
-                </div>
-
-
-                <!-- Password -->
-                <div class="input-box">
-                    <label for="password">Password</label>
-
-                    <input
-                        type="password"
-                        id="password"
-                        placeholder="Enter your password"
-                        required
-                    >
-                </div>
-
-
-                <button type="submit" class="login-btn">
-                    Login
-                </button>
-
-            </form>
-
-
-            <div class="message" id="message"></div>
-
-
-            <div class="register">
-                Don't have an account?
-                <a href="register.html">Register Here</a>
-            </div>
-
-        </div>
-
+        <div class="circuit circuit-one"></div>
+        <div class="circuit circuit-two"></div>
     </div>
 
+    <header class="navbar">
+        <a href="/" class="brand" aria-label="CircuitCycle home">
+            <span class="brand-mark">⌁</span>
+            <span class="brand-name"><span>Circuit</span>Cycle</span>
+        </a>
+        <a href="/" class="back-link">← Back to Home</a>
+    </header>
+
+    <main class="login-container">
+        <section class="welcome-section">
+            <div class="welcome-content">
+                <div class="welcome-badge">WELCOME BACK</div>
+                <div class="logo-circle" aria-hidden="true">♻</div>
+                <h1>Good to see<br><span>you again.</span></h1>
+                <p>
+                    Sign in to continue identifying laptop components
+                    and making smarter, more responsible recycling choices.
+                </p>
+                <div class="eco-badge">🌱 Give Every Component a Second Chance</div>
+            </div>
+            <div class="welcome-decoration" aria-hidden="true"></div>
+        </section>
+
+        <section class="form-section">
+            <div class="form-panel" id="loginPanel">
+                <div class="form-header">
+                    <div class="eyebrow">YOUR ECO JOURNEY CONTINUES</div>
+                    <h2>Log In</h2>
+                    <p class="subtitle">Welcome back! Sign in to your CircuitCycle account.</p>
+                </div>
+
+                <form id="loginForm">
+                    <div class="input-box">
+                        <label for="username">Username or Email</label>
+                        <input type="text" id="username" name="username"
+                               placeholder="Enter your username or email"
+                               autocomplete="username" required>
+                    </div>
+
+                    <div class="input-box">
+                        <label for="password">Password</label>
+                        <input type="password" id="password" name="password"
+                               placeholder="Enter your password"
+                               autocomplete="current-password" required>
+                    </div>
+
+                    <div class="password-row">
+                        <button type="button" class="text-button" id="forgotPasswordButton">
+                            Forgot password?
+                        </button>
+                    </div>
+
+                    <button type="submit" class="login-btn">Log In &nbsp; →</button>
+                    <div class="message" id="loginMessage" role="status" aria-live="polite"></div>
+                </form>
+
+                <div class="divider">OR</div>
+
+                <a href="/auth/google" class="google-btn">
+                    <svg class="google-icon" xmlns="http://www.w3.org/2000/svg"
+                         viewBox="0 0 48 48" aria-hidden="true">
+                        <path fill="#EA4335" d="M24 9.5c3.5 0 6.7 1.2 9.2 3.6l6.8-6.8C35.9 2.4 30.5 0 24 0 14.6 0 6.5 5.4 2.6 13.2l8 6.2C12.4 13.7 17.7 9.5 24 9.5z" transform="translate(0 4)"/>
+                        <path fill="#4285F4" d="M47 24.5c0-1.6-.2-3.1-.4-4.5H24v9h12.9c-.6 3-2.3 5.5-4.7 7.2l7.7 6C44.4 38 47 31.8 47 24.5z"/>
+                        <path fill="#FBBC05" d="M10.5 28.6A14.4 14.4 0 0 1 9.8 24c0-1.6.2-3.1.7-4.6l-8-6.2A23.9 23.9 0 0 0 0 24c0 3.9.9 7.5 2.6 10.8z" transform="translate(0 4)"/>
+                        <path fill="#34A853" d="M24 48c6.5 0 11.9-2.1 15.9-5.8l-7.7-6c-2.1 1.5-4.9 2.3-8.2 2.3-6.3 0-11.6-4.2-13.5-9.9l-8 6.2C6.5 42.6 14.6 48 24 48z"/>
+                    </svg>
+                    Continue with Google
+                </a>
+
+                <p class="login-text">Don't have an account? <a href="/register">Register here</a></p>
+            </div>
+
+            <div class="form-panel" id="resetRequestPanel" hidden>
+                <div class="form-header">
+                    <div class="eyebrow">ACCOUNT RECOVERY</div>
+                    <h2>Forgot password?</h2>
+                    <p class="subtitle">Enter the email address linked to your account and we'll send you a 6-digit code.</p>
+                </div>
+
+                <form id="resetRequestForm">
+                    <div class="input-box">
+                        <label for="resetEmail">Email Address</label>
+                        <input type="email" id="resetEmail" name="email"
+                               placeholder="Enter your registered email"
+                               autocomplete="email" required>
+                    </div>
+                    <button type="submit" class="login-btn">Send Reset Code &nbsp; →</button>
+                    <div class="message" id="resetRequestMessage" role="status" aria-live="polite"></div>
+                </form>
+
+                <p class="login-text"><button type="button" class="back-to-login" data-show-login>← Back to log in</button></p>
+            </div>
+
+            <div class="form-panel" id="resetCompletePanel" hidden>
+                <div class="form-header">
+                    <div class="eyebrow">VERIFY YOUR EMAIL</div>
+                    <h2>Choose a new password</h2>
+                    <p class="subtitle">Enter the 6-digit code from your email and set a new password.</p>
+                </div>
+
+                <form id="resetCompleteForm">
+                    <div class="input-box">
+                        <label for="resetCode">6-digit verification code</label>
+                        <input type="text" id="resetCode" name="code"
+                               placeholder="Enter your code" inputmode="numeric"
+                               pattern="[0-9]{6}" maxlength="6" autocomplete="one-time-code" required>
+                    </div>
+                    <div class="input-box">
+                        <label for="newPassword">New Password</label>
+                        <input type="password" id="newPassword" name="password"
+                               placeholder="At least 6 characters" minlength="6"
+                               autocomplete="new-password" required>
+                    </div>
+                    <div class="input-box">
+                        <label for="confirmPassword">Confirm New Password</label>
+                        <input type="password" id="confirmPassword"
+                               placeholder="Enter your new password again"
+                               minlength="6" autocomplete="new-password" required>
+                    </div>
+                    <button type="submit" class="login-btn">Reset Password &nbsp; →</button>
+                    <div class="message" id="resetCompleteMessage" role="status" aria-live="polite"></div>
+                </form>
+
+                <p class="login-text"><button type="button" class="back-to-login" data-show-login>← Back to log in</button></p>
+            </div>
+        </section>
+    </main>
 
     <script>
+        const panels = {
+            login: document.getElementById("loginPanel"),
+            request: document.getElementById("resetRequestPanel"),
+            complete: document.getElementById("resetCompletePanel")
+        };
+        let resetEmail = "";
 
-        document.getElementById("loginForm").addEventListener("submit", function(event) {
+        function showPanel(name) {
+            Object.keys(panels).forEach(function (key) {
+                panels[key].hidden = key !== name;
+            });
+        }
 
+        function showMessage(element, text, success) {
+            element.textContent = text;
+            element.classList.toggle("success", Boolean(success));
+            element.style.display = "block";
+        }
+
+        async function postJson(url, payload) {
+            const response = await fetch(url, {
+                method: "POST",
+                credentials: "same-origin",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(payload)
+            });
+            const result = await response.json();
+            if (!response.ok) {
+                throw new Error(result.message || "The request could not be completed.");
+            }
+            return result;
+        }
+
+        function setLoading(button, loading, text) {
+            if (!button.dataset.defaultText) button.dataset.defaultText = button.textContent;
+            button.disabled = loading;
+            button.textContent = loading ? text : button.dataset.defaultText;
+        }
+
+        document.getElementById("loginForm").addEventListener("submit", async function (event) {
             event.preventDefault();
+            const form = event.currentTarget;
+            if (!form.reportValidity()) return;
 
-            // Get entered values
-            const username = document.getElementById("username").value.trim();
-            const password = document.getElementById("password").value;
-
-            // Get registered user data from localStorage
-            const registeredUser = JSON.parse(
-                localStorage.getItem("registeredUser")
-            );
-
-            const message = document.getElementById("message");
-
-
-            // Check whether registration data exists
-            if (!registeredUser) {
-
-                message.style.color = "red";
-
-                message.innerHTML =
-                    "No account found. Please register first.";
-
-                return;
+            const button = form.querySelector('button[type="submit"]');
+            const message = document.getElementById("loginMessage");
+            setLoading(button, true, "Signing in…");
+            message.style.display = "none";
+            try {
+                await postJson("/api/login", {
+                    username: document.getElementById("username").value.trim(),
+                    password: document.getElementById("password").value
+                });
+                window.location.assign("/home");
+            } catch (error) {
+                showMessage(message, error.message || "Unable to connect. Please try again.", false);
+            } finally {
+                setLoading(button, false, "");
             }
-
-
-            // Check username/email and password
-            if (
-                (username === registeredUser.username ||
-                 username === registeredUser.email)
-                &&
-                password === registeredUser.password
-            ) {
-
-                message.style.color = "green";
-
-                message.innerHTML =
-                    "Login successful! Redirecting...";
-
-
-                // Save login status
-                localStorage.setItem("isLoggedIn", "true");
-
-
-                // Go to dashboard
-                setTimeout(function() {
-                    window.location.href = "dashboard.html";
-                }, 1000);
-
-            }
-
-            else {
-
-                message.style.color = "red";
-
-                message.innerHTML =
-                    "Invalid username/email or password.";
-
-            }
-
         });
 
-    </script>
+        document.getElementById("forgotPasswordButton").addEventListener("click", function () {
+            const enteredUsername = document.getElementById("username").value.trim();
+            const emailField = document.getElementById("resetEmail");
+            if (enteredUsername.includes("@")) emailField.value = enteredUsername;
+            showPanel("request");
+            emailField.focus();
+        });
 
+        document.getElementById("resetRequestForm").addEventListener("submit", async function (event) {
+            event.preventDefault();
+            const form = event.currentTarget;
+            if (!form.reportValidity()) return;
+
+            const button = form.querySelector('button[type="submit"]');
+            const message = document.getElementById("resetRequestMessage");
+            resetEmail = document.getElementById("resetEmail").value.trim();
+            setLoading(button, true, "Sending code…");
+            message.style.display = "none";
+            try {
+                const result = await postJson("/api/password-reset/request", { email: resetEmail });
+                showMessage(message, result.message, true);
+                document.getElementById("resetCode").value = "";
+                document.getElementById("newPassword").value = "";
+                document.getElementById("confirmPassword").value = "";
+                showPanel("complete");
+                document.getElementById("resetCode").focus();
+            } catch (error) {
+                showMessage(message, error.message || "Unable to send the code. Please try again.", false);
+            } finally {
+                setLoading(button, false, "");
+            }
+        });
+
+        document.getElementById("resetCompleteForm").addEventListener("submit", async function (event) {
+            event.preventDefault();
+            const form = event.currentTarget;
+            const password = document.getElementById("newPassword");
+            const confirmPassword = document.getElementById("confirmPassword");
+            const message = document.getElementById("resetCompleteMessage");
+            confirmPassword.setCustomValidity(
+                password.value === confirmPassword.value ? "" : "Passwords do not match."
+            );
+            if (!form.reportValidity()) return;
+
+            const button = form.querySelector('button[type="submit"]');
+            setLoading(button, true, "Updating password…");
+            message.style.display = "none";
+            try {
+                const result = await postJson("/api/password-reset/complete", {
+                    email: resetEmail,
+                    code: document.getElementById("resetCode").value.trim(),
+                    password: password.value
+                });
+                showPanel("login");
+                showMessage(document.getElementById("loginMessage"), result.message, true);
+                document.getElementById("username").value = resetEmail;
+                document.getElementById("password").focus();
+            } catch (error) {
+                showMessage(message, error.message || "Unable to reset your password. Please try again.", false);
+            } finally {
+                setLoading(button, false, "");
+            }
+        });
+
+        document.querySelectorAll("[data-show-login]").forEach(function (button) {
+            button.addEventListener("click", function () {
+                showPanel("login");
+            });
+        });
+
+        const googleErrors = {
+            google_not_configured: "Google sign-in isn't configured yet. Please use email and password.",
+            google_failed: "Google sign-in couldn't be completed. Please try again."
+        };
+        const errorCode = new URLSearchParams(window.location.search).get("error");
+        if (errorCode && googleErrors[errorCode]) {
+            showMessage(document.getElementById("loginMessage"), googleErrors[errorCode], false);
+        }
+    </script>
 </body>
 </html>

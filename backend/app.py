@@ -2,9 +2,19 @@ from flask import Flask, request, jsonify, render_template, redirect, url_for, r
 from flask_cors import CORS  # type: ignore[import-not-found]
 import base64
 import binascii
+import hashlib
+import hmac
 import json
 import os
+import secrets
+import smtplib
+import ssl
+import time
+import urllib.error
+import urllib.parse
+import urllib.request
 from datetime import timedelta
+from email.message import EmailMessage
 
 app = Flask(__name__, template_folder='../frontend')
 CORS(app)  
@@ -17,6 +27,11 @@ app.permanent_session_lifetime = timedelta(days=7)
 
 DATA_FILE = "users.json"
 MAX_PROFILE_PHOTO_SIZE = 2 * 1024 * 1024
+PASSWORD_RESET_TTL_SECONDS = 10 * 60
+PASSWORD_RESET_COOLDOWN_SECONDS = 60
+PASSWORD_RESET_MAX_ATTEMPTS = 5
+password_reset_codes = {}
+password_reset_requests = {}
 
 def load_users():
     if not os.path.exists(DATA_FILE):
@@ -101,57 +116,223 @@ def register_page():
 def login_page():
     if 'user_email' in session:
         return redirect(url_for('home_page'))
-        
+    return render_template('login.html')
+
+
+def find_user_by_email(users, email):
+    normalized_email = email.strip().lower()
+    for user_id, user_data in users.items():
+        if (user_id.lower() == normalized_email or
+                user_data.get('email', '').strip().lower() == normalized_email):
+            return user_id, user_data
+    return None, None
+
+
+def send_password_reset_email(email, code):
+    host = os.environ.get('SMTP_HOST', 'smtp.gmail.com')
+    port = int(os.environ.get('SMTP_PORT', '587'))
+    username = os.environ.get('SMTP_USERNAME')
+    password = os.environ.get('SMTP_PASSWORD')
+    sender = os.environ.get('SMTP_FROM', username or '')
+    if not username or not password or not sender:
+        raise RuntimeError("SMTP_USERNAME, SMTP_PASSWORD, and SMTP_FROM must be configured.")
+
+    message = EmailMessage()
+    message['Subject'] = 'Your CircuitCycle password reset code'
+    message['From'] = sender
+    message['To'] = email
+    message.set_content(
+        f"Your CircuitCycle password reset code is {code}. "
+        "It expires in 10 minutes. If you did not request this, ignore this email."
+    )
+
+    with smtplib.SMTP(host, port, timeout=15) as smtp:
+        smtp.starttls(context=ssl.create_default_context())
+        smtp.login(username, password)
+        smtp.send_message(message)
+
+
+@app.route('/api/password-reset/request', methods=['POST'])
+def request_password_reset():
+    payload = request.get_json(silent=True)
+    email = payload.get('email', '') if isinstance(payload, dict) else ''
+    if not isinstance(email, str) or not email.strip():
+        return jsonify({"success": False, "message": "Enter your registered email address."}), 400
+
+    user_id, user_data = find_user_by_email(load_users(), email)
+    if user_data is None:
+        return jsonify({"success": False, "message": "No account is registered with that email address."}), 404
+
+    email = user_data.get('email') or user_id
+    now = time.time()
+    if now - password_reset_requests.get(email.lower(), 0) < PASSWORD_RESET_COOLDOWN_SECONDS:
+        return jsonify({"success": False, "message": "Please wait a minute before requesting another code."}), 429
+
+    code = f"{secrets.randbelow(1_000_000):06d}"
     try:
-        original_html = render_template('login.html')
-        
-        # Intercepts form data submit, routes to /api/login, and saves cookie session state
-        injected_controller = """
-        <script>
-        document.addEventListener("DOMContentLoaded", function() {
-            var targetForm = document.querySelector("form");
-            if(targetForm) {
-                targetForm.removeAttribute("action");
-                targetForm.removeAttribute("method");
-                
-                targetForm.addEventListener("submit", function(e) {
-                    e.preventDefault();
-                    
-                    var userBox = document.querySelector('input[type="text"], input[name="username"], input[name="email"], #username');
-                    var passBox = document.querySelector('input[type="password"], input[name="password"], #password');
-                    
-                    var payload = {
-                        username: userBox ? userBox.value : "User",
-                        password: passBox ? passBox.value : ""
-                    };
-                    
-                    fetch('/api/login', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(payload)
-                    })
-                    .then(function(res) { return res.json(); })
-                    .then(function(data) {
-                        if (data.success || data.status === "success") {
-                            window.location.replace("/home");
-                        } else {
-                            alert(data.message || "Invalid account credentials entered.");
-                        }
-                    })
-                    .catch(function(err) {
-                        window.location.replace("/home");
-                    });
-                });
-            }
-        });
-        </script>
-        </body>
-        """
-        if "</body>" in original_html:
-            return original_html.replace("</body>", injected_controller)
-        return original_html + injected_controller
-    except Exception:
-        return render_template('login.html')
+        send_password_reset_email(email, code)
+    except (OSError, smtplib.SMTPException, RuntimeError, ValueError):
+        app.logger.exception("Unable to send password reset email.")
+        return jsonify({
+            "success": False,
+            "message": "We couldn't send the code right now. Please try again later."
+        }), 503
+
+    password_reset_codes[email.lower()] = {
+        "digest": hashlib.sha256(f"{email.lower()}:{code}".encode()).hexdigest(),
+        "expires_at": now + PASSWORD_RESET_TTL_SECONDS,
+        "attempts": 0
+    }
+    password_reset_requests[email.lower()] = now
+    return jsonify({"success": True, "message": "A 6-digit reset code was sent to your email."}), 200
+
+
+@app.route('/api/password-reset/complete', methods=['POST'])
+def complete_password_reset():
+    payload = request.get_json(silent=True)
+    if not isinstance(payload, dict):
+        return jsonify({"success": False, "message": "Invalid password reset request."}), 400
+
+    email = payload.get('email', '')
+    code = payload.get('code', '')
+    new_password = payload.get('password', '')
+    if not all(isinstance(value, str) for value in (email, code, new_password)):
+        return jsonify({"success": False, "message": "Enter your email, code, and new password."}), 400
+    email = email.strip().lower()
+    if not email or not code.isdigit() or len(code) != 6:
+        return jsonify({"success": False, "message": "Enter the 6-digit code sent to your email."}), 400
+    if len(new_password) < 6:
+        return jsonify({"success": False, "message": "Your password must be at least 6 characters."}), 400
+
+    reset = password_reset_codes.get(email)
+    if reset is None or reset['expires_at'] < time.time():
+        password_reset_codes.pop(email, None)
+        return jsonify({"success": False, "message": "That code has expired. Request a new one."}), 400
+    if reset['attempts'] >= PASSWORD_RESET_MAX_ATTEMPTS:
+        password_reset_codes.pop(email, None)
+        return jsonify({"success": False, "message": "Too many incorrect attempts. Request a new code."}), 429
+
+    submitted_digest = hashlib.sha256(f"{email}:{code}".encode()).hexdigest()
+    if not hmac.compare_digest(reset['digest'], submitted_digest):
+        reset['attempts'] += 1
+        return jsonify({"success": False, "message": "That code is incorrect. Please try again."}), 400
+
+    user_id, user_data = find_user_by_email(load_users(), email)
+    if user_data is None:
+        password_reset_codes.pop(email, None)
+        return jsonify({"success": False, "message": "No account is registered with that email address."}), 404
+
+    users = load_users()
+    user_data['password'] = new_password
+    users[user_id] = user_data
+    save_users(users)
+    password_reset_codes.pop(email, None)
+    password_reset_requests.pop(email, None)
+    return jsonify({"success": True, "message": "Your password has been reset. You can now log in."}), 200
+
+
+@app.route('/auth/google')
+def google_login():
+    client_id = os.environ.get('GOOGLE_CLIENT_ID')
+    if not client_id or not os.environ.get('GOOGLE_CLIENT_SECRET'):
+        return redirect(url_for('login_page', error='google_not_configured'))
+
+    state = secrets.token_urlsafe(32)
+    session['google_oauth_state'] = state
+    redirect_uri = os.environ.get('GOOGLE_REDIRECT_URI') or url_for(
+        'google_callback', _external=True
+    )
+    query = urllib.parse.urlencode({
+        'client_id': client_id,
+        'redirect_uri': redirect_uri,
+        'response_type': 'code',
+        'scope': 'openid email profile',
+        'state': state,
+        'prompt': 'select_account'
+    })
+    return redirect(f"https://accounts.google.com/o/oauth2/v2/auth?{query}")
+
+
+@app.route('/auth/google/callback')
+def google_callback():
+    expected_state = session.pop('google_oauth_state', '')
+    received_state = request.args.get('state', '')
+    if not expected_state or not hmac.compare_digest(expected_state, received_state):
+        return redirect(url_for('login_page', error='google_failed'))
+    if request.args.get('error') or not request.args.get('code'):
+        return redirect(url_for('login_page', error='google_failed'))
+
+    client_id = os.environ.get('GOOGLE_CLIENT_ID')
+    client_secret = os.environ.get('GOOGLE_CLIENT_SECRET')
+    if not client_id or not client_secret:
+        return redirect(url_for('login_page', error='google_not_configured'))
+
+    redirect_uri = os.environ.get('GOOGLE_REDIRECT_URI') or url_for(
+        'google_callback', _external=True
+    )
+    token_request = urllib.request.Request(
+        'https://oauth2.googleapis.com/token',
+        data=urllib.parse.urlencode({
+            'code': request.args['code'],
+            'client_id': client_id,
+            'client_secret': client_secret,
+            'redirect_uri': redirect_uri,
+            'grant_type': 'authorization_code'
+        }).encode(),
+        headers={'Content-Type': 'application/x-www-form-urlencoded'}
+    )
+    try:
+        with urllib.request.urlopen(token_request, timeout=10) as response:
+            token_data = json.loads(response.read())
+        id_token = token_data.get('id_token')
+        if not id_token:
+            raise ValueError("Google did not return an ID token.")
+
+        with urllib.request.urlopen(
+                'https://oauth2.googleapis.com/tokeninfo?' +
+                urllib.parse.urlencode({'id_token': id_token}),
+                timeout=10) as response:
+            identity = json.loads(response.read())
+
+        if (identity.get('aud') != client_id or
+                identity.get('iss') not in ('accounts.google.com', 'https://accounts.google.com') or
+                identity.get('email_verified') not in (True, 'true') or
+                int(identity.get('exp', 0)) <= time.time()):
+            raise ValueError("Google identity token validation failed.")
+    except (urllib.error.URLError, TimeoutError, ValueError, KeyError, TypeError,
+            json.JSONDecodeError):
+        app.logger.exception("Google sign-in could not be completed.")
+        return redirect(url_for('login_page', error='google_failed'))
+
+    email = identity.get('email', '').strip()
+    if not email:
+        return redirect(url_for('login_page', error='google_failed'))
+
+    users = load_users()
+    user_id, user_data = find_user_by_email(users, email)
+    if user_data is None:
+        base_username = (identity.get('name') or email.split('@', 1)[0]).strip()
+        username = base_username
+        existing_names = {user.get('username', '').lower() for user in users.values()}
+        suffix = 1
+        while username.lower() in existing_names:
+            suffix += 1
+            username = f"{base_username}{suffix}"
+        user_id = email
+        user_data = {
+            "username": username,
+            "email": email,
+            "items_recycled": 0,
+            "points": 0
+        }
+        users[user_id] = user_data
+        save_users(users)
+
+    session.clear()
+    session.permanent = True
+    session['user_email'] = user_data.get('email', email)
+    session['user_username'] = user_data.get('username', email.split('@', 1)[0])
+    return redirect(url_for('home_page'))
 
 @app.route('/home', methods=['GET'])
 def home_page():
@@ -382,6 +563,8 @@ def update_profile_photo():
 @app.route('/register', methods=['POST'])
 def handle_register():
     json_data = request.get_json(silent=True) or {}
+    if not isinstance(json_data, dict):
+        return jsonify({"success": False, "message": "All fields are required."}), 400
     
     username = json_data.get('username') or request.values.get('username')
     email = json_data.get('email') or request.values.get('email') or username
@@ -427,33 +610,34 @@ def handle_register():
 def handle_login():
     users = load_users()
     json_data = request.get_json(silent=True) or {}
-    
-    input_user = (json_data.get('username') or request.values.get('username') or 
+    if not isinstance(json_data, dict):
+        return jsonify({"success": False, "message": "Enter your username/email and password."}), 400
+    input_user = (json_data.get('username') or request.values.get('username') or
                   json_data.get('email') or request.values.get('email') or
                   json_data.get('loginUser') or request.values.get('loginUser'))
-    
-    username_val = str(input_user) if input_user else "User"
-    email_val = ""
-    points_val = 0
-    recycled_val = 0
+    password = json_data.get('password') or request.values.get('password')
+    if not isinstance(input_user, str) or not isinstance(password, str):
+        return jsonify({"success": False, "message": "Enter your username/email and password."}), 400
 
-    if input_user in users:
-        username_val = users[input_user].get('username', username_val)
-        email_val = users[input_user].get('email', email_val)
-        points_val = users[input_user].get('points', 0)
-        recycled_val = users[input_user].get('items_recycled', 0)
-    else:
-        for stored_email, u_data in users.items():
-            if u_data.get('username') == input_user or u_data.get('email') == input_user:
-                username_val = u_data.get('username', username_val)
-                email_val = u_data.get('email', email_val)
-                points_val = u_data.get('points', 0)
-                recycled_val = u_data.get('items_recycled', 0)
-                break
+    user_id, user_data = None, None
+    for candidate_id, candidate in users.items():
+        if (candidate_id.lower() == input_user.strip().lower() or
+                candidate.get('email', '').lower() == input_user.strip().lower() or
+                candidate.get('username', '').lower() == input_user.strip().lower()):
+            user_id, user_data = candidate_id, candidate
+            break
+    if user_data is None or user_data.get('password') != password:
+        return jsonify({
+            "success": False,
+            "message": "Invalid username/email or password."
+        }), 401
 
-    # Persist session metrics inside active storage variables
+    username_val = user_data.get('username', input_user)
+    email_val = user_data.get('email', user_id)
+    points_val = user_data.get('points', 0)
+    recycled_val = user_data.get('items_recycled', 0)
     session.permanent = True
-    session['user_email'] = email_val if email_val else username_val
+    session['user_email'] = email_val
     session['user_username'] = username_val
 
     return jsonify({
