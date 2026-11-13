@@ -361,7 +361,7 @@
             openCameraButton.addEventListener("click", async function () {
                 setCameraStatus("", false);
                 if (!window.isSecureContext) {
-                    setCameraStatus("Camera access requires HTTPS or localhost. Open this site at http://localhost:5000 or use HTTPS.", true);
+                    setCameraStatus("Camera access requires a secure page. Install the project dependencies, run `py backend/app.py` from the project folder, and open http://localhost:5000/classify. A file:// page or a non-local HTTP address cannot use the camera.", true);
                     return;
                 }
                 if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
@@ -369,28 +369,14 @@
                     return;
                 }
 
-                if (navigator.permissions && navigator.permissions.query) {
-                    try {
-                        const permission = await navigator.permissions.query({ name: "camera" });
-                        if (permission.state === "denied") {
-                            setCameraStatus(
-                                "Camera access is blocked for this site. In Chrome, click the site controls icon beside the address, open Site settings, set Camera to Allow, then reload this page and click Open camera. Also check Windows Settings > Privacy & security > Camera if it is still blocked.",
-                                true
-                            );
-                            return;
-                        }
-                    } catch (error) {
-                        if (!(error instanceof TypeError)) {
-                            console.warn("Unable to check camera permission; requesting camera access directly:", error);
-                        }
-                    }
-                }
-
                 openCameraButton.disabled = true;
                 openCameraButton.textContent = "Opening camera…";
                 setCameraStatus("Allow camera access in the browser prompt to start the camera.", false);
                 try {
-                    const stream = await navigator.mediaDevices.getUserMedia({ audio: false, video: true });
+                    const stream = await navigator.mediaDevices.getUserMedia({
+                        audio: false,
+                        video: { facingMode: { ideal: "environment" } }
+                    });
                     activeStream = stream;
                     cameraPreview.srcObject = stream;
                     await cameraPreview.play();
@@ -401,14 +387,16 @@
                     console.error("Unable to open the camera:", error);
                     stopCamera();
                     const messages = {
-                        NotAllowedError: "Camera permission is blocked. In Chrome, click the site controls icon beside the address, open Site settings, set Camera to Allow, then reload this page and click Open camera.",
+                        NotAllowedError: "Camera access was denied by the browser or device. Allow Camera for localhost in the browser's site settings, check that camera access is enabled in your operating system's privacy settings, then click Open camera again.",
                         NotFoundError: "No camera was found. Connect or enable a camera, then click Open camera again.",
-                        NotReadableError: "The camera is already in use or unavailable. Close other apps using it, then click Open camera again.",
+                        NotReadableError: "Chrome can see the camera but could not start it. Close this camera-settings popup (its preview can hold the webcam), and quit Camera, Teams, Zoom, or other apps using it; then try again. If it still fails, test the webcam in the Windows Camera app and check Windows camera privacy settings and the laptop's camera shutter or function key.",
                         OverconstrainedError: "The camera is unavailable with the requested settings. Check the connected camera, then try again.",
-                        SecurityError: "The browser blocked camera access. Open this page on localhost or HTTPS and allow camera access in Site settings."
+                        SecurityError: "The browser blocked camera access. Open this page on localhost or HTTPS and allow camera access in the browser and operating-system privacy settings.",
+                        AbortError: "The camera could not start. Close other apps using it and try again.",
+                        TypeError: "The camera request could not be made. Open this page on localhost or HTTPS and try again."
                     };
                     setCameraStatus(
-                        messages[error.name] || "The camera could not be opened. Check that it is connected and allow this site to use it in your browser's Site settings.",
+                        messages[error.name] || "The camera could not be opened. Check the browser and operating-system camera permissions, and make sure no other app is using the camera.",
                         true
                     );
                 } finally {
@@ -435,6 +423,7 @@
                 }, "image/jpeg", .92);
             });
             document.getElementById("closeCamera").addEventListener("click", stopCamera);
+            window.addEventListener("pagehide", stopCamera);
             document.getElementById("classifyImage").addEventListener("click", function () {
                 showResult(
                     "Image received",
