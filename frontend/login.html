@@ -518,7 +518,7 @@
         .form-panel[hidden] { display: none; }
 
         @media (max-width: 800px) {
-            body { padding-top: 90px; }
+            body { justify-content: flex-start; align-items: center; padding: 90px 20px 32px; }
             .login-container { max-width: 510px; grid-template-columns: 1fr; }
             .welcome-section {
                 padding: 32px 25px;
@@ -544,6 +544,10 @@
             .form-section { padding: 27px 20px; }
             .form-header h2 { font-size: 29px; }
             .input-box { margin-bottom: 13px; }
+        }
+
+        @media (max-height: 760px) and (min-width: 801px) {
+            body { justify-content: flex-start; padding-top: 90px; }
         }
 
         @media (prefers-reduced-motion: reduce) {

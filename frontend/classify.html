@@ -225,6 +225,16 @@
             .choice-card { padding: 20px; }
             .choice-card p { min-height: 0; }
         }
+        @media (max-width: 420px) {
+            body { padding: 82px 12px 28px; }
+            .navbar { top: 12px; padding: 9px 11px; }
+            .brand { gap: 7px; font-size: 16px; }
+            .brand-mark { width: 33px; height: 33px; font-size: 21px; }
+            .back-link { font-size: 11px; }
+            h1 { font-size: clamp(34px, 10vw, 42px); letter-spacing: -1.5px; }
+            .eyebrow { font-size: 9px; letter-spacing: 1.3px; }
+            .camera-controls .button { flex: 1 1 130px; }
+        }
         @media (prefers-reduced-motion: reduce) {
             *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; scroll-behavior: auto !important; }
         }

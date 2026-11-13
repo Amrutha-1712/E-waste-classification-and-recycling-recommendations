@@ -95,7 +95,7 @@
         .nav-links .nav-action:hover { color: #101a0c; transform: translateY(-2px); box-shadow: 0 9px 24px rgba(168,255,120,.22); }
 
         section { padding: 108px 0; }
-        .hero { min-height: 100vh; padding-top: 150px; padding-bottom: 80px; display: grid; grid-template-columns: 1fr 1fr; align-items: center; gap: 55px; }
+        .hero { min-height: 100vh; padding-top: 150px; padding-bottom: 80px; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: center; gap: clamp(24px, 4vw, 55px); }
         .hero-copy { animation: reveal .9s ease both; }
         @keyframes reveal { from { opacity: 0; transform: translateY(25px); } to { opacity: 1; transform: translateY(0); } }
         .status-label { width: fit-content; display: flex; align-items: center; gap: 9px; padding: 8px 13px; color: var(--green-bright); font-size: 10px; font-weight: 800; letter-spacing: 1.8px; border: 1px solid rgba(120,242,154,.25); border-radius: 6px; background: rgba(120,242,154,.055); }
@@ -162,7 +162,7 @@
         .component-card p { color: var(--muted); font-size: 12px; line-height: 1.65; }
 
         .classifier-section { background: radial-gradient(circle at 80% 50%,rgba(168,255,120,.075),transparent 33%),#0a120c; }
-        .classifier-box { margin-top: 42px; padding: 40px; display: grid; grid-template-columns: 1fr .8fr; align-items: center; gap: 40px; border: 1px solid var(--line); border-radius: 17px; background: rgba(168,255,120,.035); }
+        .classifier-box { margin-top: 42px; padding: 40px; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, .8fr); align-items: center; gap: 40px; border: 1px solid var(--line); border-radius: 17px; background: rgba(168,255,120,.035); }
         .classifier-box h3 { margin: 15px 0; font-size: clamp(29px,4vw,48px); line-height: 1.08; }
         .classifier-box p { max-width: 620px; color: var(--muted); line-height: 1.85; }
         .input-options { margin-top: 23px; display: flex; flex-wrap: wrap; gap: 9px; }
@@ -223,7 +223,7 @@
         @media (max-width: 700px) {
             .navbar { width: 94%; padding: 9px 11px; gap: 10px; }
             .brand { font-size: 17px; gap: 7px; } .brand-mark { width: 33px; height: 33px; }
-            .nav-links { gap: 10px; } .nav-links a:not(.nav-action):not(.profile-link) { display: none; }
+            .nav-links { min-width: 0; gap: 10px; } .nav-links a:not(.nav-action):not(.profile-link) { display: none; }
             .nav-links a { font-size: 12px; } .nav-links .nav-action,.nav-links .profile-link { padding: 8px 10px; }
             .hero h1 { font-size: 52px; letter-spacing: -3px; }
             .holo-circle { width: 330px; height: 330px; } .holo-circle-small { width: 250px; height: 250px; }
@@ -235,6 +235,7 @@
         }
         @media (max-width: 480px) {
             .container { width: min(100% - 32px, 1180px); }
+            .hero { min-height: auto; }
             .component-grid,.team-grid { grid-template-columns: 1fr; }
             .visual-area { width: 100%; min-height: 350px; transform: none; margin: 0; }
             .holo-circle { width: 270px; height: 270px; }
@@ -265,7 +266,7 @@
             .brand { font-size: 14px; gap: 5px; }
             .brand-mark { width: 29px; height: 29px; font-size: 18px; }
             .nav-links { gap: 5px; }
-            .nav-links .nav-action, .nav-links .profile-link { padding: 7px 8px; font-size: 11px; }
+            .nav-links .nav-action, .nav-links .profile-link { padding: 7px 6px; font-size: 10px; }
             .hero { padding-top: 125px; }
             .status-label { font-size: 9px; letter-spacing: 1.2px; }
             .visual-area { min-height: 315px; }
