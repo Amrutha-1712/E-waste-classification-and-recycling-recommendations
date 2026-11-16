@@ -546,11 +546,11 @@
                 <div class="kicker">✦ &nbsp; WELCOME BACK</div>
                 <h2>Think Green.<br><span class="green">Live Clean.</span></h2>
                 <p class="desc">Login to continue to your e-waste dashboard.</p>
-                <form id="loginForm">
+                <form id="loginForm" action="/login" method="post">
                     <div class="field"><label for="username">USERNAME OR EMAIL</label><input id="username"
-                            placeholder="Enter username or email" autocomplete="username" required></div>
+                            name="username" placeholder="Enter username or email" autocomplete="username" required></div>
                     <div class="field"><label for="password">PASSWORD</label><input id="password" type="password"
-                            placeholder="Enter your password" autocomplete="current-password" required></div>
+                            name="password" placeholder="Enter your password" autocomplete="current-password" required></div>
                     <div class="forgot"><a href="#" id="forgotLink">Forgot Password?</a></div>
                     <button class="btn" type="submit">LOGIN TO DASHBOARD &nbsp; ↗</button>
                 </form>
@@ -565,9 +565,9 @@
                 <h2>Forgot <span class="green">Password?</span></h2>
                 <p class="desc">Enter your registered email address.</p>
                 <form id="emailForm">
-                    <div class="field"><label for="email">REGISTERED EMAIL</label><input id="email" type="email"
+                    <div class="field"><label for="email">REGISTERED EMAIL</label><input id="email" name="email" type="email"
                             placeholder="Enter your email" required></div>
-                    <button class="btn">CONTINUE &nbsp; ↗</button>
+                    <button class="btn" type="submit">CONTINUE &nbsp; ↗</button>
                 </form>
                 <div class="msg" id="emailMsg" role="status"></div>
                 <div class="register"><a href="#" id="back">← Back to Login</a></div>
@@ -588,6 +588,7 @@
         }
         const login = document.getElementById("login");
         const recovery = document.getElementById("recovery");
+        const apiBase = location.port === "5000" ? "" : "http://127.0.0.1:5000";
         function showRecovery(on) {
             login.classList.toggle("hidden", on);
             recovery.classList.toggle("hidden", !on);
@@ -598,25 +599,37 @@
         document.getElementById("back").onclick = e => {
             e.preventDefault(); showRecovery(false);
         };
-        document.getElementById("loginForm").onsubmit = e => {
-            e.preventDefault();
-            let user;
-            try { user = JSON.parse(localStorage.getItem("registeredUser")) } catch (err) { }
-            const name = document.getElementById("username").value.trim().toLowerCase();
-            const pass = document.getElementById("password").value;
+        const loginError = new URLSearchParams(location.search).get("error");
+        if (loginError === "invalid_credentials") {
             const m = document.getElementById("loginMsg");
-            if (!user) { m.style.color = "#ff7777"; m.textContent = "No account found. Please register first."; return }
-            if ((name === String(user.username || "").toLowerCase() || name === String(user.email || "").toLowerCase()) && pass === user.password) {
-                localStorage.setItem("isLoggedIn", "true");
-                m.style.color = "#39ff88"; m.textContent = "✓ Login successful! Redirecting...";
-                setTimeout(() => location.href = "dashboard.html", 500);
-            } else { m.style.color = "#ff7777"; m.textContent = "Incorrect username/email or password." }
-        };
-        document.getElementById("emailForm").onsubmit = e => {
+            m.style.color = "#ff7777";
+            m.textContent = "Incorrect username/email or password.";
+        }
+        document.getElementById("emailForm").onsubmit = async e => {
             e.preventDefault();
             const m = document.getElementById("emailMsg");
+            const button = e.currentTarget.querySelector("button[type='submit']");
+            const email = document.getElementById("email").value.trim();
+            button.disabled = true;
+            button.textContent = "SENDING...";
             m.style.color = "#ffd080";
-            m.textContent = "Connect a secure email verification service to reset your password.";
+            m.textContent = "Sending your reset code...";
+            try {
+                const response = await fetch(`${apiBase}/api/password-reset/request`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ email })
+                });
+                const result = await response.json();
+                m.style.color = response.ok ? "#39ff88" : "#ff7777";
+                m.textContent = result.message || "Unable to send a reset code.";
+            } catch (err) {
+                m.style.color = "#ff7777";
+                m.textContent = "Unable to connect to the server. Please try again.";
+            } finally {
+                button.disabled = false;
+                button.textContent = "CONTINUE ↗";
+            }
         };
         document.getElementById("googleBtn").addEventListener("click", function () {
     window.open("https://accounts.google.com/", "_blank");

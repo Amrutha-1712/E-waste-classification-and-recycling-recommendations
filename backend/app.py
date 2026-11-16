@@ -181,7 +181,13 @@ def request_password_reset():
     code = f"{secrets.randbelow(1_000_000):06d}"
     try:
         send_password_reset_email(email, code)
-    except (OSError, smtplib.SMTPException, RuntimeError, ValueError):
+    except RuntimeError:
+        app.logger.error("Password reset email is not configured; required SMTP settings are missing.")
+        return jsonify({
+            "success": False,
+            "message": "Email sending is not configured. Set SMTP_USERNAME, SMTP_PASSWORD, and SMTP_FROM on the server, then try again."
+        }), 503
+    except (OSError, smtplib.SMTPException, ValueError):
         app.logger.exception("Unable to send password reset email.")
         return jsonify({
             "success": False,
@@ -627,6 +633,8 @@ def handle_login():
                   json_data.get('loginUser') or request.values.get('loginUser'))
     password = json_data.get('password') or request.values.get('password')
     if not isinstance(input_user, str) or not isinstance(password, str):
+        if request.form or not request.is_json:
+            return redirect(url_for('login_page', error='invalid_credentials'))
         return jsonify({"success": False, "message": "Enter your username/email and password."}), 400
 
     user_id, user_data = None, None
@@ -637,6 +645,8 @@ def handle_login():
             user_id, user_data = candidate_id, candidate
             break
     if user_data is None or user_data.get('password') != password:
+        if request.form or not request.is_json:
+            return redirect(url_for('login_page', error='invalid_credentials'))
         return jsonify({
             "success": False,
             "message": "Invalid username/email or password."
@@ -649,6 +659,9 @@ def handle_login():
     session.permanent = True
     session['user_email'] = email_val
     session['user_username'] = username_val
+
+    if request.form or not request.is_json:
+        return redirect(url_for('home_page'))
 
     return jsonify({
         "success": True,
