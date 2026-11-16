@@ -14,10 +14,17 @@
         "items_recycled": 0,
         "points": 0
     },
+<<<<<<< HEAD
     "deekshakpoojary023@gmail.com": {
         "username": "Deeksha",
         "password": "123456",
         "email": "deekshakpoojary023@gmail.com",
+=======
+    "D@gmail.com": {
+        "username": "Disha",
+        "password": "D@123456",
+        "email": "D@gmail.com",
+>>>>>>> dc5aa2984366a8b31de7a46679a1f838d7d702d0
         "items_recycled": 0,
         "points": 0
     }
