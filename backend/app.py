@@ -394,12 +394,29 @@ def home_page():
                 .nav-links { gap: clamp(8px, 1.5vw, 16px); }
             }
             @media (max-width: 700px) {
-                .navbar { width: calc(100% - 16px); top: 8px; gap: 8px; }
+                .navbar { left: 8px; width: calc(100% - 16px); top: 8px; gap: 8px; transform: none; backdrop-filter: none; }
                 .nav-links { gap: 8px; }
                 .profile-menu {
-                    right: 0;
-                    width: min(340px, calc(100vw - 16px));
+                    position: fixed;
+                    top: 76px;
+                    right: 8px;
+                    z-index: 1001;
+                    width: min(340px, calc(100vw - 32px));
                     max-height: calc(100vh - 82px);
+                }
+                .profile-menu .profile-actions {
+                    display: grid;
+                    grid-template-columns: repeat(2, minmax(0, 1fr));
+                }
+                .profile-menu .profile-actions .button {
+                    min-width: 0;
+                    padding: 10px 8px;
+                    text-align: center;
+                    font-size: 12px;
+                }
+                .profile-menu #profilePhotoStatus {
+                    grid-column: 1 / -1;
+                    overflow-wrap: anywhere;
                 }
             }
         </style>

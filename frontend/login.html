@@ -82,7 +82,7 @@
         .card {
             position: relative;
             z-index: 1;
-            width: 900px;
+            width: min(900px, calc(100vw - 40px));
             max-width: 100%;
             display: flex;
             border-radius: 22px;
@@ -465,7 +465,8 @@
 
             .card {
                 flex-direction: column;
-                max-width: 420px
+                width: 100%;
+                max-width: 100%
             }
 
             .left,
@@ -526,7 +527,7 @@
     </style>
 </head>
 
-<body>gitgi
+<body>
     <div class="grid"></div>
     <div id="particles"></div>
 
