@@ -207,6 +207,22 @@
         .result p { margin: 0; }
         .result.error { border-color: rgba(255,160,120,.4); }
         .result.error strong { color: #ffb28f; }
+        .result-details { margin-top: 12px; }
+        .result-details p + p { margin-top: 5px; }
+        .result-details h3 { margin: 15px 0 5px; color: var(--green); font-size: 15px; }
+        .feedback-card { margin-top: 20px; }
+        .feedback-form { display: grid; gap: 12px; }
+        .feedback-form label { display: grid; gap: 5px; color: var(--muted); font-size: 13px; }
+        .feedback-form select, .feedback-form textarea {
+            width: 100%;
+            padding: 10px 12px;
+            color: var(--white);
+            border: 1px solid var(--line);
+            border-radius: 8px;
+            background: #101a12;
+        }
+        .feedback-form textarea { min-height: 90px; resize: vertical; }
+        .feedback-status { margin-top: 10px; color: var(--muted); font-size: 13px; }
         .sr-only {
             position: absolute;
             width: 1px;
@@ -297,7 +313,43 @@
         <div class="result" id="result" role="status" aria-live="polite" hidden>
             <strong id="resultTitle"></strong>
             <p id="resultText"></p>
+            <div class="result-details" id="resultDetails" hidden></div>
         </div>
+
+        <section class="preview-card feedback-card" id="feedbackCard" aria-label="Classification feedback" hidden>
+            <h2 class="preview-heading">Help us improve</h2>
+            <form class="feedback-form" id="feedbackForm">
+                <label>Was the component classification correct?
+                    <select name="classification_correct" required>
+                        <option value="">Choose an answer</option>
+                        <option value="true">Yes</option>
+                        <option value="false">No</option>
+                    </select>
+                </label>
+                <label>Was the recycling recommendation useful?
+                    <select name="recommendation_useful" required>
+                        <option value="">Choose an answer</option>
+                        <option value="true">Yes</option>
+                        <option value="false">No</option>
+                    </select>
+                </label>
+                <label>Overall experience (1 to 5)
+                    <select name="overall_rating" required>
+                        <option value="">Choose a rating</option>
+                        <option value="1">1 - Poor</option>
+                        <option value="2">2 - Fair</option>
+                        <option value="3">3 - Good</option>
+                        <option value="4">4 - Very good</option>
+                        <option value="5">5 - Excellent</option>
+                    </select>
+                </label>
+                <label>Comments (optional)
+                    <textarea name="comments" maxlength="1000" placeholder="Share anything that would help us improve"></textarea>
+                </label>
+                <button class="button button-primary" type="submit">Send feedback</button>
+            </form>
+            <p class="feedback-status" id="feedbackStatus" role="status" aria-live="polite"></p>
+        </section>
     </main>
 
     <script>
@@ -309,10 +361,14 @@
             const imagePreview = document.getElementById("imagePreview");
             const imageName = document.getElementById("imageName");
             const result = document.getElementById("result");
+            const resultDetails = document.getElementById("resultDetails");
+            const feedbackCard = document.getElementById("feedbackCard");
             const cameraStatus = document.getElementById("cameraStatus");
             const openCameraButton = document.getElementById("openCamera");
             let activeStream = null;
             let currentImageUrl = null;
+            let currentImageFile = null;
+            let currentPrediction = null;
 
             function setCameraStatus(message, isError) {
                 cameraStatus.textContent = message;
@@ -328,16 +384,22 @@
                 stopCamera();
                 if (currentImageUrl) URL.revokeObjectURL(currentImageUrl);
                 currentImageUrl = URL.createObjectURL(file);
+                currentImageFile = file;
+                currentPrediction = null;
                 imagePreview.src = currentImageUrl;
                 imageName.textContent = file.name || "Captured image";
                 previewCard.hidden = false;
                 result.hidden = true;
+                feedbackCard.hidden = true;
                 previewCard.scrollIntoView({ behavior: "smooth", block: "nearest" });
             }
 
             function showResult(title, message, isError) {
                 document.getElementById("resultTitle").textContent = title;
                 document.getElementById("resultText").textContent = message;
+                resultDetails.replaceChildren();
+                resultDetails.hidden = true;
+                feedbackCard.hidden = true;
                 result.classList.toggle("error", Boolean(isError));
                 result.hidden = false;
             }
@@ -361,7 +423,7 @@
             openCameraButton.addEventListener("click", async function () {
                 setCameraStatus("", false);
                 if (!window.isSecureContext) {
-                    setCameraStatus("Camera access requires a secure page. Install the project dependencies, run `py backend/app.py` from the project folder, and open http://localhost:5000/classify. A file:// page or a non-local HTTP address cannot use the camera.", true);
+                    setCameraStatus("Camera access requires a secure page. Install the project dependencies, run `py -m backend.app` from the project folder, and open http://localhost:5000/classify. A file:// page or a non-local HTTP address cannot use the camera.", true);
                     return;
                 }
                 if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
@@ -424,12 +486,96 @@
             });
             document.getElementById("closeCamera").addEventListener("click", stopCamera);
             window.addEventListener("pagehide", stopCamera);
-            document.getElementById("classifyImage").addEventListener("click", function () {
-                showResult(
-                    "Image received",
-                    "The image is ready, but automated predictions are not available because this project does not currently include a trained classification model or classification service.",
-                    true
-                );
+            document.getElementById("classifyImage").addEventListener("click", async function () {
+                if (!currentImageFile) {
+                    showResult("Choose an image", "Select or capture an image before classifying it.", true);
+                    return;
+                }
+
+                const button = document.getElementById("classifyImage");
+                button.disabled = true;
+                button.textContent = "Classifying…";
+                showResult("Classifying image", "The model is analyzing the image.", false);
+                try {
+                    const formData = new FormData();
+                    formData.append("image", currentImageFile, currentImageFile.name || "camera-capture.jpg");
+                    const response = await fetch("/api/classify", {
+                        method: "POST",
+                        body: formData,
+                        credentials: "same-origin"
+                    });
+                    const data = await response.json();
+                    if (!response.ok) throw new Error(data.message || "Classification failed.");
+
+                    currentPrediction = data;
+                    showResult(
+                        data.component,
+                        `Prediction Confidence: ${Number(data.confidence).toFixed(1)}% · ${data.status_message}`,
+                        data.classification_status !== "classified"
+                    );
+                    if (data.recommendation) {
+                        const heading = document.createElement("h3");
+                        heading.textContent = "Recycling recommendation";
+                        resultDetails.appendChild(heading);
+                        [
+                            ["Disposition", data.recommendation.disposition],
+                            ["Reuse", data.recommendation.reuse],
+                            ["Handling", data.recommendation.handling],
+                            ["Recycling", data.recommendation.recycling],
+                            ["Safety", data.recommendation.safety]
+                        ].forEach(function ([label, value]) {
+                            const line = document.createElement("p");
+                            line.textContent = `${label}: ${value}`;
+                            resultDetails.appendChild(line);
+                        });
+                        resultDetails.hidden = false;
+                    }
+                    feedbackCard.hidden = false;
+                    feedbackCard.scrollIntoView({ behavior: "smooth", block: "nearest" });
+                } catch (error) {
+                    console.error("Classification request failed:", error);
+                    showResult(
+                        "Classification unavailable",
+                        error.message || "The image could not be classified. Please try again.",
+                        true
+                    );
+                } finally {
+                    button.disabled = false;
+                    button.textContent = "Classify image →";
+                }
+            });
+
+            document.getElementById("feedbackForm").addEventListener("submit", async function (event) {
+                event.preventDefault();
+                const form = event.currentTarget;
+                const button = form.querySelector("button[type='submit']");
+                const status = document.getElementById("feedbackStatus");
+                const values = new FormData(form);
+                button.disabled = true;
+                status.textContent = "Sending feedback…";
+                try {
+                    const response = await fetch("/api/feedback", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        credentials: "same-origin",
+                        body: JSON.stringify({
+                            classification_correct: values.get("classification_correct") === "true",
+                            recommendation_useful: values.get("recommendation_useful") === "true",
+                            overall_rating: Number(values.get("overall_rating")),
+                            comments: values.get("comments") || "",
+                            component: currentPrediction ? currentPrediction.component : null
+                        })
+                    });
+                    const data = await response.json();
+                    if (!response.ok) throw new Error(data.message || "Feedback could not be saved.");
+                    status.textContent = "Thank you. Your feedback was saved.";
+                    form.reset();
+                } catch (error) {
+                    console.error("Feedback submission failed:", error);
+                    status.textContent = error.message || "Feedback could not be saved. Please try again.";
+                } finally {
+                    button.disabled = false;
+                }
             });
             window.addEventListener("pagehide", stopCamera);
         }());

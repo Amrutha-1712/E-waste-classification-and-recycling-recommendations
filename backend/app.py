@@ -1,5 +1,7 @@
 from flask import Flask, request, jsonify, render_template, redirect, url_for, render_template_string, session # type: ignore[import-not-found]
 from flask_cors import CORS  # type: ignore[import-not-found]
+from pathlib import Path
+from io import BytesIO
 import base64
 import binascii
 import hashlib
@@ -8,6 +10,7 @@ import json
 import os
 import secrets
 import smtplib
+import sqlite3
 import ssl
 import time
 import urllib.error
@@ -15,35 +18,85 @@ import urllib.parse
 import urllib.request
 from datetime import timedelta
 from email.message import EmailMessage
+from PIL import Image, UnidentifiedImageError
 
-app = Flask(__name__, template_folder='../frontend')
-CORS(app)  
+from .feedback_store import save_feedback
+from .model_service import ModelUnavailableError, get_classifier
+from .recommendations import RECOMMENDATIONS, get_recommendation
 
-# Hardcoded secret key guarantees consistency across server hot-reloads
-app.secret_key = "e_waste_care_secure_session_key_2026" 
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
+
+app = Flask(__name__, template_folder=str(PROJECT_ROOT / "frontend"))
+CORS(app)
+
+app.secret_key = os.environ.get("FLASK_SECRET_KEY") or secrets.token_hex(32)
+if not os.environ.get("FLASK_SECRET_KEY"):
+    app.logger.warning(
+        "FLASK_SECRET_KEY is not set; sessions will not survive server restarts."
+    )
+app.config.update(
+    MAX_CONTENT_LENGTH=12 * 1024 * 1024,
+    SESSION_COOKIE_HTTPONLY=True,
+    SESSION_COOKIE_SAMESITE="Lax",
+    SESSION_COOKIE_SECURE=os.environ.get("FLASK_COOKIE_SECURE") == "1",
+)
 
 # Forces the browser session cookie to remain active for 7 days across close/refresh events
 app.permanent_session_lifetime = timedelta(days=7)
 
-DATA_FILE = "users.json"
+DATA_FILE = PROJECT_ROOT / "users.json"
 MAX_PROFILE_PHOTO_SIZE = 2 * 1024 * 1024
+MAX_CLASSIFICATION_IMAGE_SIZE = 10 * 1024 * 1024
+PASSWORD_HASH_ITERATIONS = 310_000
 PASSWORD_RESET_TTL_SECONDS = 10 * 60
 PASSWORD_RESET_COOLDOWN_SECONDS = 60
 PASSWORD_RESET_MAX_ATTEMPTS = 5
 password_reset_codes = {}
 password_reset_requests = {}
 
-def load_users():
-    if not os.path.exists(DATA_FILE):
-        return {}
-    with open(DATA_FILE, "r") as f:
+
+def hash_password(password):
+    salt = secrets.token_bytes(16)
+    digest = hashlib.pbkdf2_hmac(
+        "sha256", password.encode("utf-8"), salt, PASSWORD_HASH_ITERATIONS
+    )
+    salt_text = base64.urlsafe_b64encode(salt).decode("ascii")
+    digest_text = base64.urlsafe_b64encode(digest).decode("ascii")
+    return f"pbkdf2_sha256${PASSWORD_HASH_ITERATIONS}${salt_text}${digest_text}"
+
+
+def verify_password(user_data, password):
+    stored_hash = user_data.get("password_hash")
+    if isinstance(stored_hash, str):
         try:
-            return json.load(f)
-        except json.JSONDecodeError:
-            return {}
+            algorithm, iterations, salt_text, expected_text = stored_hash.split("$", 3)
+            if algorithm != "pbkdf2_sha256":
+                return False, False
+            salt = base64.urlsafe_b64decode(salt_text.encode("ascii"))
+            expected = base64.urlsafe_b64decode(expected_text.encode("ascii"))
+            actual = hashlib.pbkdf2_hmac(
+                "sha256", password.encode("utf-8"), salt, int(iterations)
+            )
+        except (ValueError, TypeError, binascii.Error):
+            return False, False
+        return hmac.compare_digest(actual, expected), False
+
+    legacy_password = user_data.get("password")
+    if isinstance(legacy_password, str) and hmac.compare_digest(
+        legacy_password, password
+    ):
+        return True, True
+    return False, False
+
+
+def load_users():
+    if not DATA_FILE.exists():
+        return {}
+    with DATA_FILE.open("r", encoding="utf-8") as f:
+        return json.load(f)
 
 def save_users(users):
-    with open(DATA_FILE, "w") as f:
+    with DATA_FILE.open("w", encoding="utf-8") as f:
         json.dump(users, f, indent=4)
 
 def get_session_user(users):
@@ -109,7 +162,7 @@ def root_page():
 def register_page():
     if 'user_email' in session:
         return redirect(url_for('home_page'))
-    return render_template('register.html')
+    return render_template('Register.html')
 
 @app.route('/login', methods=['GET'])
 @app.route('/login.html', methods=['GET'])
@@ -239,7 +292,8 @@ def complete_password_reset():
         return jsonify({"success": False, "message": "No account is registered with that email address."}), 404
 
     users = load_users()
-    user_data['password'] = new_password
+    user_data["password_hash"] = hash_password(new_password)
+    user_data.pop("password", None)
     users[user_id] = user_data
     save_users(users)
     password_reset_codes.pop(email, None)
@@ -626,7 +680,7 @@ def handle_register():
 
     users[email] = {
         "username": username,
-        "password": password, 
+        "password_hash": hash_password(password),
         "email": email,
         "items_recycled": 0, 
         "points": 0
@@ -661,13 +715,23 @@ def handle_login():
                 candidate.get('username', '').lower() == input_user.strip().lower()):
             user_id, user_data = candidate_id, candidate
             break
-    if user_data is None or user_data.get('password') != password:
+    if user_data is None:
+        password_matches, upgrade_legacy_password = False, False
+    else:
+        password_matches, upgrade_legacy_password = verify_password(
+            user_data, password
+        )
+    if not password_matches:
         if request.form or not request.is_json:
             return redirect(url_for('login_page', error='invalid_credentials'))
         return jsonify({
             "success": False,
             "message": "Invalid username/email or password."
         }), 401
+    if upgrade_legacy_password:
+        user_data["password_hash"] = hash_password(password)
+        user_data.pop("password", None)
+        save_users(users)
 
     username_val = user_data.get('username', input_user)
     email_val = user_data.get('email', user_id)
@@ -702,5 +766,128 @@ def handle_logout():
     session.clear()
     return redirect(url_for('root_page'))
 
+
+@app.route("/api/classify", methods=["POST"])
+def classify_image():
+    uploaded_file = request.files.get("image")
+    if uploaded_file is None or not uploaded_file.filename:
+        return jsonify({"success": False, "message": "Select an image to classify."}), 400
+
+    image_bytes = uploaded_file.read(MAX_CLASSIFICATION_IMAGE_SIZE + 1)
+    if len(image_bytes) > MAX_CLASSIFICATION_IMAGE_SIZE:
+        return jsonify({"success": False, "message": "The image must be 10 MB or smaller."}), 413
+    if not image_bytes:
+        return jsonify({"success": False, "message": "The uploaded image is empty."}), 400
+
+    try:
+        with Image.open(BytesIO(image_bytes)) as image:
+            if image.format not in {"JPEG", "PNG", "WEBP"}:
+                return jsonify({
+                    "success": False,
+                    "message": "Use a JPEG, PNG, or WebP image.",
+                }), 415
+            if image.width * image.height > 40_000_000:
+                return jsonify({
+                    "success": False,
+                    "message": "The image dimensions exceed the supported limit.",
+                }), 413
+            image.verify()
+        with Image.open(BytesIO(image_bytes)) as image:
+            image = image.convert("RGB")
+    except (UnidentifiedImageError, OSError, Image.DecompressionBombError):
+        return jsonify({"success": False, "message": "The image is invalid or corrupted."}), 400
+
+    try:
+        prediction = get_classifier().predict(image)
+    except ModelUnavailableError as error:
+        app.logger.error("Classification model is unavailable: %s", error)
+        return jsonify({"success": False, "message": str(error)}), 503
+
+    recommendation = None
+    if prediction["classification_status"] == "classified":
+        recommendation = get_recommendation(prediction["component"])
+        if recommendation is None:
+            app.logger.error(
+                "No recycling recommendation exists for model class %r.",
+                prediction["component"],
+            )
+            return jsonify({
+                "success": False,
+                "message": "A recommendation is not configured for this model class.",
+            }), 503
+
+    return jsonify({
+        "success": True,
+        "component": prediction["component"],
+        "predicted_component": prediction["predicted_component"],
+        "confidence": round(prediction["confidence"] * 100, 1),
+        "classification_status": prediction["classification_status"],
+        "status_message": (
+            "Successfully Classified"
+            if prediction["classification_status"] == "classified"
+            else "Unknown or Unrecognized Component"
+        ),
+        "recommendation": recommendation,
+    }), 200
+
+
+@app.route("/api/feedback", methods=["POST"])
+def submit_feedback():
+    payload = request.get_json(silent=True)
+    if not isinstance(payload, dict):
+        return jsonify({"success": False, "message": "Submit feedback as JSON."}), 400
+
+    classification_correct = payload.get("classification_correct")
+    recommendation_useful = payload.get("recommendation_useful")
+    overall_rating = payload.get("overall_rating")
+    component = payload.get("component")
+    comments = payload.get("comments", "")
+    if type(classification_correct) is not bool or type(recommendation_useful) is not bool:
+        return jsonify({
+            "success": False,
+            "message": "Answer both classification and recommendation questions.",
+        }), 400
+    if (
+        not isinstance(overall_rating, int)
+        or isinstance(overall_rating, bool)
+        or not 1 <= overall_rating <= 5
+    ):
+        return jsonify({"success": False, "message": "Choose a rating from 1 to 5."}), 400
+    if component is not None and (
+        not isinstance(component, str) or len(component) > 80
+    ):
+        return jsonify({"success": False, "message": "The component value is invalid."}), 400
+    if not isinstance(comments, str) or len(comments) > 1000:
+        return jsonify({
+            "success": False,
+            "message": "Feedback comments must be 1,000 characters or fewer.",
+        }), 400
+
+    try:
+        feedback_id = save_feedback({
+            "classification_correct": classification_correct,
+            "recommendation_useful": recommendation_useful,
+            "overall_rating": overall_rating,
+            "component": component,
+            "comments": comments.strip(),
+        })
+    except sqlite3.Error:
+        app.logger.exception("Unable to persist feedback.")
+        return jsonify({
+            "success": False,
+            "message": "Feedback could not be saved right now.",
+        }), 503
+
+    return jsonify({"success": True, "feedback_id": feedback_id}), 201
+
+
+@app.errorhandler(413)
+def request_too_large(_error):
+    return jsonify({"success": False, "message": "The request exceeds the 12 MB limit."}), 413
+
+
 if __name__ == '__main__':
-    app.run(debug=True, port=5000)
+    app.run(
+        debug=os.environ.get("FLASK_DEBUG") == "1",
+        port=int(os.environ.get("PORT", "5000")),
+    )
