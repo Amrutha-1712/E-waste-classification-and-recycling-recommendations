@@ -78,11 +78,13 @@ py -m backend.train_model --architecture compare
 MobileNetV2 and EfficientNetB0 use ImageNet weights, train-only augmentation,
 frozen-backbone head training, lower-rate fine-tuning, early stopping, and
 validation-based checkpointing. The architecture with the higher validation macro
-F1 is copied to `backend/artifacts/model.keras`. The same directory contains the
-class mapping, split manifest, training/validation metrics, per-class reports,
-confusion matrices, and confidence-rejection threshold. Validation metrics are
-not independent test metrics. The threshold is based on validation selective
-accuracy and does not validate rejection of unrelated images.
+F1 is copied to `backend/artifacts/best_ewaste_model.keras`. Training also writes
+`class_indices.json` with the exact output-index mapping used by Flask and a
+deterministic raw-image 80/20 split manifest. The same directory contains training/
+validation metrics, per-class reports, confusion matrices, and the fixed 0.50
+confidence-rejection threshold. Validation metrics are
+not independent test metrics. The fixed threshold is an operational cutoff and
+does not validate rejection of unrelated images.
 
 To keep tuning separate from any future independent test, do not add that dataset
 to the training command. When supplied, place it under
@@ -120,7 +122,21 @@ camera-captured JPEG, PNG, or WebP up to 10 MB. The backend does not save
 classification uploads. Until model training has produced all required artifacts,
 `POST /api/classify` returns HTTP 503 rather than a placeholder prediction.
 
-The classification endpoint is `POST /api/classify` with multipart field `image`.
+## Streamlit classifier
+
+The standalone Streamlit interface reuses the saved classifier and supports both
+image uploads and camera capture. Start it from the project root:
+
+```powershell
+python -m streamlit run backend\streamlit_app.py
+```
+
+The component recyclability and hazard lookup is defined in
+`backend/component_info.py`. Unknown class names display `Unknown` for both
+properties.
+
+The classification endpoint is `POST /api/classify` with multipart field `image`
+or a JSON `image` value containing a JPEG, PNG, or WebP base64 data URI.
 The feedback endpoint is `POST /api/feedback` with JSON fields
 `classification_correct`, `recommendation_useful`, `overall_rating` (1–5),
 `comments` (optional, at most 1,000 characters), and `component` (optional).

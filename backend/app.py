@@ -21,6 +21,7 @@ from email.message import EmailMessage
 from PIL import Image, UnidentifiedImageError
 
 from .feedback_store import save_feedback
+from .component_info import get_component_info
 from .model_service import ModelUnavailableError, get_classifier
 from .recommendations import RECOMMENDATIONS, get_recommendation
 
@@ -770,10 +771,33 @@ def handle_logout():
 @app.route("/api/classify", methods=["POST"])
 def classify_image():
     uploaded_file = request.files.get("image")
-    if uploaded_file is None or not uploaded_file.filename:
-        return jsonify({"success": False, "message": "Select an image to classify."}), 400
+    if uploaded_file is not None:
+        if not uploaded_file.filename:
+            return jsonify({"success": False, "message": "Select an image to classify."}), 400
+        image_bytes = uploaded_file.read(MAX_CLASSIFICATION_IMAGE_SIZE + 1)
+    else:
+        payload = request.get_json(silent=True)
+        image_data = payload.get("image") if isinstance(payload, dict) else None
+        if not isinstance(image_data, str) or not image_data:
+            return jsonify({"success": False, "message": "Select an image to classify."}), 400
+        if image_data[:5].lower() == "data:":
+            header, separator, image_data = image_data.partition(",")
+            if not separator or header.lower() not in {
+                "data:image/jpeg;base64",
+                "data:image/png;base64",
+                "data:image/webp;base64",
+            }:
+                return jsonify({
+                    "success": False,
+                    "message": "Use a JPEG, PNG, or WebP image.",
+                }), 415
+        if len(image_data) > ((MAX_CLASSIFICATION_IMAGE_SIZE + 2) // 3) * 4:
+            return jsonify({"success": False, "message": "The image must be 10 MB or smaller."}), 413
+        try:
+            image_bytes = base64.b64decode(image_data, validate=True)
+        except (binascii.Error, ValueError):
+            return jsonify({"success": False, "message": "The image data is invalid."}), 400
 
-    image_bytes = uploaded_file.read(MAX_CLASSIFICATION_IMAGE_SIZE + 1)
     if len(image_bytes) > MAX_CLASSIFICATION_IMAGE_SIZE:
         return jsonify({"success": False, "message": "The image must be 10 MB or smaller."}), 413
     if not image_bytes:
@@ -820,6 +844,7 @@ def classify_image():
         "success": True,
         "component": prediction["component"],
         "predicted_component": prediction["predicted_component"],
+        "component_info": get_component_info(prediction["component"]),
         "confidence": round(prediction["confidence"] * 100, 1),
         "classification_status": prediction["classification_status"],
         "status_message": (
@@ -887,6 +912,10 @@ def request_too_large(_error):
 
 
 if __name__ == '__main__':
+    try:
+        get_classifier()
+    except ModelUnavailableError as error:
+        app.logger.error("Classification model is unavailable at startup: %s", error)
     app.run(
         debug=os.environ.get("FLASK_DEBUG") == "1",
         port=int(os.environ.get("PORT", "5000")),

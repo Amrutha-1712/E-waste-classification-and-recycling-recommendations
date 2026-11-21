@@ -66,7 +66,7 @@ def build_classifier(architecture: str, class_count: int, learning_rate: float =
 
     features = backbone(prepared, training=False)
     features = tf.keras.layers.GlobalAveragePooling2D()(features)
-    features = tf.keras.layers.Dropout(0.35)(features)
+    features = tf.keras.layers.Dropout(0.3)(features)
     outputs = tf.keras.layers.Dense(
         class_count,
         activation="softmax",
@@ -125,7 +125,6 @@ def _evaluate(
 
     scores = np.asarray(probabilities)
     predicted = scores.argmax(axis=1)
-    confidence = scores.max(axis=1)
     report = classification_report(
         y_true,
         predicted,
@@ -136,13 +135,7 @@ def _evaluate(
     )
     training_metrics = model.evaluate(training_data, verbose=0, return_dict=True)
 
-    candidates = sorted(set(float(value) for value in confidence))
-    threshold = 1.0
-    for candidate in candidates:
-        accepted = confidence >= candidate
-        if accepted.any() and float(np.mean(predicted[accepted] == np.asarray(y_true)[accepted])) >= 0.95:
-            threshold = candidate
-            break
+    threshold = 0.50
 
     output_dir.mkdir(parents=True, exist_ok=True)
     matrix = confusion_matrix(
@@ -161,7 +154,7 @@ def _evaluate(
         "confusion_matrix": matrix.tolist(),
         "rejection_threshold": threshold,
         "threshold_selection": (
-            "Lowest validation confidence threshold with at least 95% selective accuracy; "
+            "Fixed confidence threshold of 0.50 to reduce rejection of valid components; "
             "this is not an out-of-distribution validation."
         ),
         "independent_test_status": "pending_not_present",
@@ -329,8 +322,8 @@ def main() -> None:
     parser.add_argument("--benchmark", action="store_true")
     parser.add_argument("--batch-size", type=int, default=8)
     parser.add_argument("--benchmark-steps", type=int, default=3)
-    parser.add_argument("--head-epochs", type=int, default=12)
-    parser.add_argument("--fine-tune-epochs", type=int, default=8)
+    parser.add_argument("--head-epochs", type=int, default=10)
+    parser.add_argument("--fine-tune-epochs", type=int, default=12)
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--dataset-root", type=Path, default=DATASET_ROOT)
     parser.add_argument("--output-dir", type=Path, default=ARTIFACTS_DIR)
@@ -356,6 +349,13 @@ def main() -> None:
     (args.output_dir / "class_names.json").write_text(
         json.dumps(manifest["class_names"], indent=2), encoding="utf-8"
     )
+    class_indices = {
+        str(label): class_name
+        for label, class_name in enumerate(manifest["class_names"])
+    }
+    (args.output_dir / "class_indices.json").write_text(
+        json.dumps(class_indices, indent=2), encoding="utf-8"
+    )
     results = [
         train_architecture(
             architecture,
@@ -372,7 +372,7 @@ def main() -> None:
         key=lambda item: item["metrics"]["validation_macro_f1"],
     )
     best_path = Path(best["model_path"])
-    destination = args.output_dir / "model.keras"
+    destination = args.output_dir / "best_ewaste_model.keras"
     if best_path != destination:
         import shutil
 

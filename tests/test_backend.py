@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import base64
 from io import BytesIO
 import sqlite3
 
@@ -74,7 +75,29 @@ def test_classifier_returns_specific_recommendation(monkeypatch):
     assert response.status_code == 200
     assert response.json["component"] == "Battery"
     assert response.json["confidence"] == 98.5
+    assert response.json["component_info"] == (
+        "Component: Battery\nRecyclable: Yes\nHazardous: Yes"
+    )
     assert response.json["recommendation"]["reuse"].startswith("Reuse only")
+
+
+def test_classifier_accepts_base64_data_uri(monkeypatch):
+    class FakeClassifier:
+        def predict(self, image):
+            assert image.mode == "RGB"
+            return {
+                "component": "Battery",
+                "predicted_component": "Battery",
+                "confidence": 0.75,
+                "classification_status": "classified",
+            }
+
+    monkeypatch.setattr(backend_app, "get_classifier", FakeClassifier)
+    data_uri = "data:image/jpeg;base64," + base64.b64encode(_image_bytes()).decode("ascii")
+    response = _client().post("/api/classify", json={"image": data_uri})
+
+    assert response.status_code == 200
+    assert response.json["component"] == "Battery"
 
 
 def test_missing_model_is_reported_as_unavailable(monkeypatch):

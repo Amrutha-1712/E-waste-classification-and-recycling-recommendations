@@ -10,8 +10,8 @@ from PIL import Image
 
 
 ARTIFACTS_DIR = Path(__file__).resolve().parent / "artifacts"
-MODEL_PATH = ARTIFACTS_DIR / "model.keras"
-CLASS_NAMES_PATH = ARTIFACTS_DIR / "class_names.json"
+MODEL_PATH = ARTIFACTS_DIR / "best_ewaste_model.keras"
+CLASS_INDICES_PATH = ARTIFACTS_DIR / "class_indices.json"
 THRESHOLD_PATH = ARTIFACTS_DIR / "rejection_threshold.json"
 UNKNOWN_LABEL = "Unknown or Unrecognized Component"
 
@@ -63,7 +63,7 @@ def get_classifier() -> Classifier:
             return _classifier
 
         missing = [
-            path.name for path in (MODEL_PATH, CLASS_NAMES_PATH, THRESHOLD_PATH)
+            path.name for path in (MODEL_PATH, CLASS_INDICES_PATH, THRESHOLD_PATH)
             if not path.is_file()
         ]
         if missing:
@@ -77,7 +77,9 @@ def get_classifier() -> Classifier:
             import tensorflow as tf
 
             model = tf.keras.models.load_model(MODEL_PATH, compile=False)
-            class_names = json.loads(CLASS_NAMES_PATH.read_text(encoding="utf-8"))
+            class_indices = json.loads(
+                CLASS_INDICES_PATH.read_text(encoding="utf-8")
+            )
             threshold_data = json.loads(THRESHOLD_PATH.read_text(encoding="utf-8"))
             threshold = float(threshold_data["threshold"])
         except (OSError, ValueError, KeyError, TypeError) as error:
@@ -86,12 +88,16 @@ def get_classifier() -> Classifier:
             ) from error
 
         if (
-            not isinstance(class_names, list)
-            or not class_names
-            or not all(isinstance(name, str) for name in class_names)
+            not isinstance(class_indices, dict)
+            or not class_indices
+            or set(class_indices) != {str(index) for index in range(len(class_indices))}
+            or not all(isinstance(name, str) for name in class_indices.values())
             or not 0.0 <= threshold <= 1.0
         ):
             raise ModelUnavailableError("The saved class mapping or threshold is invalid.")
 
+        class_names = [
+            class_indices[str(index)] for index in range(len(class_indices))
+        ]
         _classifier = Classifier(model, class_names, threshold)
         return _classifier
