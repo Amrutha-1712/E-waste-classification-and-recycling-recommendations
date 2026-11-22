@@ -552,7 +552,7 @@
                             name="username" placeholder="Enter username or email" autocomplete="username" required></div>
                     <div class="field"><label for="password">PASSWORD</label><input id="password" type="password"
                             name="password" placeholder="Enter your password" autocomplete="current-password" required></div>
-                    <div class="forgot"><a href="#" id="forgotLink">Forgot Password?</a></div>
+                    <div class="forgot"><a href="/forgot-password" id="forgotLink">Forgot Password?</a></div>
                     <button class="btn" type="submit">LOGIN TO DASHBOARD &nbsp; ↗</button>
                 </form>
                 <button class="google" id="googleBtn" type="button"><b>G</b> Continue with Google</button>
@@ -594,9 +594,6 @@
             login.classList.toggle("hidden", on);
             recovery.classList.toggle("hidden", !on);
         }
-        document.getElementById("forgotLink").onclick = e => {
-            e.preventDefault(); showRecovery(true);
-        };
         document.getElementById("back").onclick = e => {
             e.preventDefault(); showRecovery(false);
         };

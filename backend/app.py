@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify, render_template, redirect, url_for, render_template_string, session # type: ignore[import-not-found]
+from flask import Flask, request, jsonify, render_template, redirect, url_for, render_template_string, session, make_response # type: ignore[import-not-found]
 from flask_cors import CORS  # type: ignore[import-not-found]
 from pathlib import Path
 from io import BytesIO
@@ -6,19 +6,23 @@ import base64
 import binascii
 import hashlib
 import hmac
+import html
 import json
 import os
 import secrets
 import smtplib
 import sqlite3
 import ssl
+import threading
 import time
 import urllib.error
 import urllib.parse
 import urllib.request
 from datetime import timedelta
 from email.message import EmailMessage
+from threading import Thread
 from PIL import Image, UnidentifiedImageError
+from dotenv import load_dotenv
 
 from .feedback_store import save_feedback
 from .component_info import get_component_info
@@ -26,6 +30,9 @@ from .model_service import ModelUnavailableError, get_classifier
 from .recommendations import RECOMMENDATIONS, get_recommendation
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
+BACKEND_ENV_FILE = (Path(__file__).resolve().parent / ".env").resolve()
+load_dotenv(dotenv_path=BACKEND_ENV_FILE)
+APP_BASE_URL = os.environ.get("APP_BASE_URL", "http://localhost:5000").rstrip("/")
 
 app = Flask(__name__, template_folder=str(PROJECT_ROOT / "frontend"))
 CORS(app)
@@ -41,6 +48,21 @@ app.config.update(
     SESSION_COOKIE_SAMESITE="Lax",
     SESSION_COOKIE_SECURE=os.environ.get("FLASK_COOKIE_SECURE") == "1",
 )
+app.logger.warning(
+    "Backend .env path: %s (exists=%s); SMTP variable presence: %s",
+    BACKEND_ENV_FILE,
+    BACKEND_ENV_FILE.is_file(),
+    ", ".join(
+        f"{name}={'set' if os.environ.get(name) else 'missing'}"
+        for name in (
+            "SMTP_USERNAME",
+            "SMTP_PASSWORD",
+            "SMTP_FROM",
+            "SMTP_SERVER",
+            "SMTP_PORT",
+        )
+    ),
+)
 
 # Forces the browser session cookie to remain active for 7 days across close/refresh events
 app.permanent_session_lifetime = timedelta(days=7)
@@ -49,11 +71,11 @@ DATA_FILE = PROJECT_ROOT / "users.json"
 MAX_PROFILE_PHOTO_SIZE = 2 * 1024 * 1024
 MAX_CLASSIFICATION_IMAGE_SIZE = 10 * 1024 * 1024
 PASSWORD_HASH_ITERATIONS = 310_000
-PASSWORD_RESET_TTL_SECONDS = 10 * 60
+PASSWORD_RESET_TOKEN_TTL_SECONDS = 15 * 60
 PASSWORD_RESET_COOLDOWN_SECONDS = 60
-PASSWORD_RESET_MAX_ATTEMPTS = 5
-password_reset_codes = {}
+password_reset_tokens = {}
 password_reset_requests = {}
+password_reset_lock = threading.Lock()
 
 
 def hash_password(password):
@@ -172,6 +194,22 @@ def login_page():
         return redirect(url_for('home_page'))
     return render_template('login.html')
 
+@app.route('/forgot-password')
+@app.route('/forgot-password.html')
+def forgot_password_page():
+    return render_template('forgot-password.html')
+
+@app.route('/reset-password')
+def reset_password_page():
+    token = request.args.get('token', '')
+    if get_password_reset_token(token) is None:
+        return redirect(url_for('forgot_password_page', reset='invalid_token'))
+
+    response = make_response(render_template('reset-password.html', reset_token=token))
+    response.headers['Cache-Control'] = 'no-store'
+    response.headers['Referrer-Policy'] = 'no-referrer'
+    return response
+
 @app.route('/classify')
 @app.route('/classify.html')
 def classify_page():
@@ -192,69 +230,183 @@ def find_user_by_email(users, email):
     return None, None
 
 
-def send_password_reset_email(email, code):
-    host = os.environ.get('SMTP_HOST', 'smtp.gmail.com')
-    port = int(os.environ.get('SMTP_PORT', '587'))
+class SMTPConfigurationError(RuntimeError):
+    pass
+
+
+def clear_failed_password_reset_email(email, digest, requested_at):
+    with password_reset_lock:
+        password_reset_tokens.pop(digest, None)
+        if password_reset_requests.get(email) == requested_at:
+            password_reset_requests.pop(email, None)
+
+
+def deliver_password_reset_email(recipient, reset_url, digest, email, requested_at):
+    try:
+        send_password_reset_email(recipient, reset_url)
+    except SMTPConfigurationError as error:
+        clear_failed_password_reset_email(email, digest, requested_at)
+        app.logger.error("Password reset email configuration error: %s", error)
+    except smtplib.SMTPAuthenticationError:
+        clear_failed_password_reset_email(email, digest, requested_at)
+        app.logger.exception("SMTP authentication failed while sending a reset link.")
+    except (smtplib.SMTPConnectError, smtplib.SMTPServerDisconnected, TimeoutError, OSError):
+        clear_failed_password_reset_email(email, digest, requested_at)
+        app.logger.exception("Could not connect to the SMTP server.")
+    except smtplib.SMTPException:
+        clear_failed_password_reset_email(email, digest, requested_at)
+        app.logger.exception("The SMTP server rejected the password reset email.")
+    except ValueError:
+        clear_failed_password_reset_email(email, digest, requested_at)
+        app.logger.exception("The password reset email could not be formatted.")
+
+
+def get_smtp_settings():
+    server = os.environ.get('SMTP_SERVER') or os.environ.get('SMTP_HOST') or 'smtp.gmail.com'
     username = os.environ.get('SMTP_USERNAME')
     password = os.environ.get('SMTP_PASSWORD')
-    sender = os.environ.get('SMTP_FROM', username or '')
-    if not username or not password or not sender:
-        raise RuntimeError("SMTP_USERNAME, SMTP_PASSWORD, and SMTP_FROM must be configured.")
+    sender = os.environ.get('SMTP_FROM')
+    missing = [
+        name for name, value in (
+            ('SMTP_SERVER', server),
+            ('SMTP_USERNAME', username),
+            ('SMTP_PASSWORD', password),
+            ('SMTP_FROM', sender),
+        ) if not value
+    ]
+    if missing:
+        raise SMTPConfigurationError(
+            "Missing required email settings: " + ", ".join(missing)
+        )
 
+    try:
+        port = int(os.environ.get('SMTP_PORT', '587'))
+    except ValueError as error:
+        raise SMTPConfigurationError("SMTP_PORT must be a number.") from error
+    if not 1 <= port <= 65535:
+        raise SMTPConfigurationError("SMTP_PORT must be between 1 and 65535.")
+
+    return server, port, username, password, sender
+
+
+def send_password_reset_email(email, reset_url):
+    server, port, username, password, sender = get_smtp_settings()
     message = EmailMessage()
-    message['Subject'] = 'Your CircuitCycle password reset code'
+    message['Subject'] = 'Reset your CircuitCycle password'
     message['From'] = sender
     message['To'] = email
     message.set_content(
-        f"Your CircuitCycle password reset code is {code}. "
-        "It expires in 10 minutes. If you did not request this, ignore this email."
+        "We received a request to reset your CircuitCycle password.\n\n"
+        f"Reset it using this link (valid for 15 minutes):\n{reset_url}\n\n"
+        "If you did not request this, you can ignore this email."
+    )
+    message.add_alternative(
+        "<p>We received a request to reset your CircuitCycle password.</p>"
+        f'<p><a href="{html.escape(reset_url, quote=True)}">Reset your password</a></p>'
+        "<p>This link expires in 15 minutes. If you did not request this, "
+        "you can ignore this email.</p>",
+        subtype='html',
     )
 
-    with smtplib.SMTP(host, port, timeout=15) as smtp:
+    with smtplib.SMTP(server, port, timeout=15) as smtp:
+        smtp.ehlo()
         smtp.starttls(context=ssl.create_default_context())
+        smtp.ehlo()
         smtp.login(username, password)
         smtp.send_message(message)
 
 
+def password_reset_token_digest(token):
+    key = str(app.secret_key).encode("utf-8")
+    return hmac.new(key, token.encode("utf-8"), hashlib.sha256).hexdigest()
+
+
+def get_password_reset_token(token):
+    if not isinstance(token, str) or not token or len(token) > 256:
+        return None
+
+    digest = password_reset_token_digest(token)
+    with password_reset_lock:
+        reset = password_reset_tokens.get(digest)
+        if reset is None:
+            return None
+        if reset['expires_at'] <= time.time():
+            password_reset_tokens.pop(digest, None)
+            return None
+        return digest, reset
+
+
 @app.route('/api/password-reset/request', methods=['POST'])
+@app.route('/api/password-reset/request-code', methods=['POST'])
+@app.route('/api/password-reset/request-link', methods=['POST'])
 def request_password_reset():
     payload = request.get_json(silent=True)
     email = payload.get('email', '') if isinstance(payload, dict) else ''
     if not isinstance(email, str) or not email.strip():
         return jsonify({"success": False, "message": "Enter your registered email address."}), 400
 
+    email = email.strip().lower()
+    if "@" not in email:
+        return jsonify({"success": False, "message": "Enter a valid email address."}), 400
+
     user_id, user_data = find_user_by_email(load_users(), email)
     if user_data is None:
-        return jsonify({"success": False, "message": "No account is registered with that email address."}), 404
+        return jsonify({
+            "success": True,
+            "message": "If an account exists for that email, a reset link will be sent."
+        }), 200
 
-    email = user_data.get('email') or user_id
-    now = time.time()
-    if now - password_reset_requests.get(email.lower(), 0) < PASSWORD_RESET_COOLDOWN_SECONDS:
-        return jsonify({"success": False, "message": "Please wait a minute before requesting another code."}), 429
-
-    code = f"{secrets.randbelow(1_000_000):06d}"
+    recipient = user_data.get('email') or user_id
+    normalized_email = str(recipient).strip().lower()
     try:
-        send_password_reset_email(email, code)
-    except RuntimeError:
-        app.logger.error("Password reset email is not configured; required SMTP settings are missing.")
+        get_smtp_settings()
+    except SMTPConfigurationError as error:
+        app.logger.error("Password reset email configuration error: %s", error)
         return jsonify({
             "success": False,
-            "message": "Email sending is not configured. Set SMTP_USERNAME, SMTP_PASSWORD, and SMTP_FROM on the server, then try again."
-        }), 503
-    except (OSError, smtplib.SMTPException, ValueError):
-        app.logger.exception("Unable to send password reset email.")
-        return jsonify({
-            "success": False,
-            "message": "We couldn't send the code right now. Please try again later."
+            "message": "Email sending is not configured. Set SMTP_USERNAME, SMTP_PASSWORD, SMTP_FROM, SMTP_SERVER, and SMTP_PORT in backend/.env, then restart the server."
         }), 503
 
-    password_reset_codes[email.lower()] = {
-        "digest": hashlib.sha256(f"{email.lower()}:{code}".encode()).hexdigest(),
-        "expires_at": now + PASSWORD_RESET_TTL_SECONDS,
-        "attempts": 0
-    }
-    password_reset_requests[email.lower()] = now
-    return jsonify({"success": True, "message": "A 6-digit reset code was sent to your email."}), 200
+    now = time.time()
+    token = secrets.token_urlsafe(32)
+    digest = password_reset_token_digest(token)
+    reset_url = f"{APP_BASE_URL}{url_for('reset_password_page', token=token)}"
+    with password_reset_lock:
+        last_request = password_reset_requests.get(normalized_email)
+        if last_request is not None:
+            retry_after = PASSWORD_RESET_COOLDOWN_SECONDS - int(now - last_request)
+            if retry_after > 0:
+                return jsonify({
+                    "success": False,
+                    "message": "Please wait before requesting another reset link.",
+                    "retry_after": retry_after
+                }), 429
+
+        password_reset_tokens[digest] = {
+            "email": normalized_email,
+            "expires_at": now + PASSWORD_RESET_TOKEN_TTL_SECONDS,
+        }
+        password_reset_requests[normalized_email] = now
+
+    try:
+        Thread(
+            target=deliver_password_reset_email,
+            args=(recipient, reset_url, digest, normalized_email, now),
+            daemon=False,
+        ).start()
+    except RuntimeError:
+        clear_failed_password_reset_email(normalized_email, digest, now)
+        app.logger.exception("Could not queue the password reset email.")
+        return jsonify({
+            "success": False,
+            "message": "The reset email could not be queued. Please try again."
+        }), 503
+
+    return jsonify({
+        "success": True,
+        "message": "If an account exists for that email, a reset link will be sent.",
+        "resend_after": PASSWORD_RESET_COOLDOWN_SECONDS
+    }), 200
 
 
 @app.route('/api/password-reset/complete', methods=['POST'])
@@ -263,42 +415,43 @@ def complete_password_reset():
     if not isinstance(payload, dict):
         return jsonify({"success": False, "message": "Invalid password reset request."}), 400
 
-    email = payload.get('email', '')
-    code = payload.get('code', '')
+    token = payload.get('token', '')
     new_password = payload.get('password', '')
-    if not all(isinstance(value, str) for value in (email, code, new_password)):
-        return jsonify({"success": False, "message": "Enter your email, code, and new password."}), 400
-    email = email.strip().lower()
-    if not email or not code.isdigit() or len(code) != 6:
-        return jsonify({"success": False, "message": "Enter the 6-digit code sent to your email."}), 400
-    if len(new_password) < 6:
+    if not isinstance(token, str) or not token:
+        return jsonify({"success": False, "message": "Use the reset link from your email."}), 400
+    if not isinstance(new_password, str) or len(new_password) < 6:
         return jsonify({"success": False, "message": "Your password must be at least 6 characters."}), 400
 
-    reset = password_reset_codes.get(email)
-    if reset is None or reset['expires_at'] < time.time():
-        password_reset_codes.pop(email, None)
-        return jsonify({"success": False, "message": "That code has expired. Request a new one."}), 400
-    if reset['attempts'] >= PASSWORD_RESET_MAX_ATTEMPTS:
-        password_reset_codes.pop(email, None)
-        return jsonify({"success": False, "message": "Too many incorrect attempts. Request a new code."}), 429
+    token_result = get_password_reset_token(token)
+    if token_result is None:
+        return jsonify({
+            "success": False,
+            "message": "This reset link is invalid or expired. Request a new one."
+        }), 400
 
-    submitted_digest = hashlib.sha256(f"{email}:{code}".encode()).hexdigest()
-    if not hmac.compare_digest(reset['digest'], submitted_digest):
-        reset['attempts'] += 1
-        return jsonify({"success": False, "message": "That code is incorrect. Please try again."}), 400
+    digest, reset = token_result
+    with password_reset_lock:
+        current_reset = password_reset_tokens.get(digest)
+        if current_reset is not reset or current_reset['expires_at'] <= time.time():
+            password_reset_tokens.pop(digest, None)
+            return jsonify({
+                "success": False,
+                "message": "This reset link is invalid or expired. Request a new one."
+            }), 400
 
-    user_id, user_data = find_user_by_email(load_users(), email)
-    if user_data is None:
-        password_reset_codes.pop(email, None)
-        return jsonify({"success": False, "message": "No account is registered with that email address."}), 404
+        users = load_users()
+        user_id, user_data = find_user_by_email(users, reset['email'])
+        if user_data is None:
+            password_reset_tokens.pop(digest, None)
+            return jsonify({"success": False, "message": "This reset link is no longer valid."}), 400
 
-    users = load_users()
-    user_data["password_hash"] = hash_password(new_password)
-    user_data.pop("password", None)
-    users[user_id] = user_data
-    save_users(users)
-    password_reset_codes.pop(email, None)
-    password_reset_requests.pop(email, None)
+        user_data["password_hash"] = hash_password(new_password)
+        user_data.pop("password", None)
+        users[user_id] = user_data
+        save_users(users)
+        password_reset_tokens.pop(digest, None)
+        password_reset_requests.pop(reset['email'], None)
+
     return jsonify({"success": True, "message": "Your password has been reset. You can now log in."}), 200
 
 
