@@ -1070,6 +1070,7 @@ if __name__ == '__main__':
     except ModelUnavailableError as error:
         app.logger.error("Classification model is unavailable at startup: %s", error)
     app.run(
+        host="0.0.0.0",
         debug=os.environ.get("FLASK_DEBUG") == "1",
         port=int(os.environ.get("PORT", "5000")),
     )

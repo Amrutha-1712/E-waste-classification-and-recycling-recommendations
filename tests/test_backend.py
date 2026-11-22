@@ -3,6 +3,8 @@ from __future__ import annotations
 import base64
 from io import BytesIO
 import sqlite3
+import threading
+from urllib.parse import parse_qs, urlsplit
 
 import backend.app as backend_app
 from backend.feedback_store import save_feedback
@@ -21,6 +23,26 @@ def _image_bytes(image_format: str = "JPEG") -> bytes:
 def _client():
     backend_app.app.config.update(TESTING=True)
     return backend_app.app.test_client()
+
+
+def _configure_smtp(monkeypatch):
+    monkeypatch.setenv("SMTP_SERVER", "smtp.gmail.com")
+    monkeypatch.setenv("SMTP_PORT", "587")
+    monkeypatch.setenv("SMTP_USERNAME", "sender@example.test")
+    monkeypatch.setenv("SMTP_PASSWORD", "test-app-password")
+    monkeypatch.setenv("SMTP_FROM", "sender@example.test")
+
+
+def _run_background_threads_synchronously(monkeypatch):
+    class ImmediateThread:
+        def __init__(self, target, args, daemon):
+            self.target = target
+            self.args = args
+
+        def start(self):
+            self.target(*self.args)
+
+    monkeypatch.setattr(backend_app, "Thread", ImmediateThread)
 
 
 def test_classification_requires_a_file():
@@ -224,6 +246,247 @@ def test_new_registrations_hash_password(monkeypatch):
     assert "password" not in user
     assert user["password_hash"].startswith("pbkdf2_sha256$")
     assert backend_app.verify_password(user, "a-strong-password") == (True, False)
+
+
+def test_email_password_reset_link_is_single_use_and_updates_password(monkeypatch):
+    _configure_smtp(monkeypatch)
+    _run_background_threads_synchronously(monkeypatch)
+    email = "reset@example.test"
+    users = {
+        email: {
+            "username": "reset-user",
+            "email": email,
+            "password_hash": backend_app.hash_password("old-password"),
+            "items_recycled": 0,
+            "points": 0,
+        }
+    }
+    delivered = []
+    monkeypatch.setattr(backend_app, "load_users", lambda: users)
+    monkeypatch.setattr(backend_app, "save_users", lambda changed: users.update(changed))
+    monkeypatch.setattr(
+        backend_app, "send_password_reset_email",
+        lambda recipient, reset_url: delivered.append((recipient, reset_url)),
+    )
+    monkeypatch.setattr(backend_app, "password_reset_tokens", {})
+    monkeypatch.setattr(backend_app, "password_reset_requests", {})
+
+    client = _client()
+    assert client.get("/forgot-password").status_code == 200
+    response = client.post(
+        "/api/password-reset/request-link",
+        json={"email": email},
+    )
+    assert response.status_code == 200
+    assert response.json["success"] is True
+    assert email not in response.get_data(as_text=True)
+    assert len(delivered) == 1
+    recipient, reset_url = delivered[0]
+    assert recipient == email
+    token = parse_qs(urlsplit(reset_url).query)["token"][0]
+    assert token not in response.get_data(as_text=True)
+    digest = backend_app.password_reset_token_digest(token)
+    assert 0 < backend_app.password_reset_tokens[digest]["expires_at"] - backend_app.time.time() <= 900
+
+    reset_page = client.get(urlsplit(reset_url).path + "?" + urlsplit(reset_url).query)
+    assert reset_page.status_code == 200
+    assert reset_page.headers["Cache-Control"] == "no-store"
+    assert reset_page.headers["Referrer-Policy"] == "no-referrer"
+    assert client.get("/reset-password?token=invalid").status_code == 302
+    assert client.post(
+        "/api/password-reset/complete",
+        json={"token": "invalid", "password": "new-password"},
+    ).status_code == 400
+    response = client.post(
+        "/api/password-reset/complete",
+        json={"token": token, "password": "new-password"},
+    )
+    assert response.status_code == 200
+    assert backend_app.verify_password(users[email], "new-password") == (True, False)
+    assert "password" not in users[email]
+    assert client.post(
+        "/api/password-reset/complete",
+        json={"token": token, "password": "another-password"},
+    ).status_code == 400
+
+
+def test_password_reset_token_expires_and_resend_is_throttled(monkeypatch):
+    _configure_smtp(monkeypatch)
+    _run_background_threads_synchronously(monkeypatch)
+    email = "expiry@example.test"
+    users = {email: {"email": email}}
+    sent = []
+    monkeypatch.setattr(backend_app, "load_users", lambda: users)
+    monkeypatch.setattr(
+        backend_app, "send_password_reset_email",
+        lambda recipient, link: sent.append((recipient, link)),
+    )
+    monkeypatch.setattr(backend_app, "password_reset_tokens", {})
+    monkeypatch.setattr(backend_app, "password_reset_requests", {})
+
+    client = _client()
+    assert client.post(
+        "/api/password-reset/request-link", json={"email": email}
+    ).status_code == 200
+    response = client.post(
+        "/api/password-reset/request-link", json={"email": email}
+    )
+    assert response.status_code == 429
+    assert response.json["retry_after"] > 0
+
+    token = parse_qs(urlsplit(sent[0][1]).query)["token"][0]
+    digest = backend_app.password_reset_token_digest(token)
+    backend_app.password_reset_tokens[digest]["expires_at"] = 0
+    response = client.get(f"/reset-password?token={token}")
+    assert response.status_code == 302
+    response = client.post("/api/password-reset/complete", json={
+        "token": token, "password": "new-password"
+    })
+    assert response.status_code == 400
+    assert "expired" in response.json["message"].lower()
+
+
+def test_password_reset_email_configuration_failure_is_reported(monkeypatch):
+    email = "smtp-error@example.test"
+    monkeypatch.setattr(backend_app, "load_users", lambda: {email: {"email": email}})
+
+    def fail_configuration():
+        raise backend_app.SMTPConfigurationError("SMTP settings are missing")
+
+    monkeypatch.setattr(backend_app, "get_smtp_settings", fail_configuration)
+    monkeypatch.setattr(backend_app, "password_reset_tokens", {})
+    monkeypatch.setattr(backend_app, "password_reset_requests", {})
+
+    response = _client().post(
+        "/api/password-reset/request-link",
+        json={"email": email},
+    )
+    assert response.status_code == 503
+    assert "not configured" in response.json["message"].lower()
+    assert email not in backend_app.password_reset_tokens
+
+
+def test_password_reset_email_uses_configured_starttls_smtp(monkeypatch):
+    sent = {}
+
+    class FakeSMTP:
+        def __init__(self, server, port, timeout):
+            sent["connection"] = (server, port, timeout)
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *_args):
+            return False
+
+        def ehlo(self):
+            sent["ehlo"] = True
+
+        def starttls(self, context):
+            sent["starttls"] = context is not None
+
+        def login(self, username, password):
+            sent["credentials"] = (username, password)
+
+        def send_message(self, message):
+            sent["message"] = message
+
+    monkeypatch.setenv("SMTP_SERVER", "smtp.gmail.com")
+    monkeypatch.setenv("SMTP_PORT", "587")
+    monkeypatch.setenv("SMTP_USERNAME", "sender@example.test")
+    monkeypatch.setenv("SMTP_PASSWORD", "test-app-password")
+    monkeypatch.setenv("SMTP_FROM", "sender@example.test")
+    monkeypatch.setattr(backend_app.smtplib, "SMTP", FakeSMTP)
+
+    backend_app.send_password_reset_email(
+        "recipient@example.test",
+        "http://localhost:5000/reset-password?token=test-token",
+    )
+
+    assert sent["connection"] == ("smtp.gmail.com", 587, 15)
+    assert sent["starttls"] is True
+    assert sent["credentials"] == ("sender@example.test", "test-app-password")
+    assert sent["message"]["To"] == "recipient@example.test"
+    assert "test-token" in sent["message"].get_body(preferencelist=("plain",)).get_content()
+
+
+def test_password_reset_request_returns_before_email_finishes(monkeypatch):
+    email = "background@example.test"
+    started = threading.Event()
+    release = threading.Event()
+    finished = threading.Event()
+    monkeypatch.setattr(backend_app, "load_users", lambda: {email: {"email": email}})
+    monkeypatch.setattr(
+        backend_app, "get_smtp_settings",
+        lambda: ("smtp.gmail.com", 587, "sender@example.test", "secret", "sender@example.test"),
+    )
+
+    def delayed_send(_recipient, _reset_url):
+        started.set()
+        release.wait(5)
+        finished.set()
+
+    monkeypatch.setattr(backend_app, "send_password_reset_email", delayed_send)
+    monkeypatch.setattr(backend_app, "password_reset_tokens", {})
+    monkeypatch.setattr(backend_app, "password_reset_requests", {})
+
+    try:
+        response = _client().post(
+            "/api/password-reset/request-link",
+            json={"email": email},
+        )
+        assert response.status_code == 200
+        assert started.wait(1)
+        assert not finished.is_set()
+    finally:
+        release.set()
+    assert finished.wait(2)
+
+
+def test_smtp_authentication_failure_is_logged_and_reset_can_be_retried(monkeypatch, caplog):
+    _configure_smtp(monkeypatch)
+    _run_background_threads_synchronously(monkeypatch)
+    email = "smtp-auth@example.test"
+    monkeypatch.setattr(backend_app, "load_users", lambda: {email: {"email": email}})
+
+    def fail_auth(*_args):
+        raise backend_app.smtplib.SMTPAuthenticationError(535, b"Authentication failed")
+
+    monkeypatch.setattr(backend_app, "send_password_reset_email", fail_auth)
+    monkeypatch.setattr(backend_app, "password_reset_tokens", {})
+    monkeypatch.setattr(backend_app, "password_reset_requests", {})
+
+    response = _client().post(
+        "/api/password-reset/request-link",
+        json={"email": email},
+    )
+    assert response.status_code == 200
+    assert "SMTP authentication failed" in caplog.text
+    assert not backend_app.password_reset_tokens
+    assert not backend_app.password_reset_requests
+
+
+def test_smtp_connection_failure_is_logged_and_reset_can_be_retried(monkeypatch, caplog):
+    _configure_smtp(monkeypatch)
+    _run_background_threads_synchronously(monkeypatch)
+    email = "smtp-connect@example.test"
+    monkeypatch.setattr(backend_app, "load_users", lambda: {email: {"email": email}})
+
+    def fail_connection(*_args):
+        raise backend_app.smtplib.SMTPServerDisconnected("connection lost")
+
+    monkeypatch.setattr(backend_app, "send_password_reset_email", fail_connection)
+    monkeypatch.setattr(backend_app, "password_reset_tokens", {})
+    monkeypatch.setattr(backend_app, "password_reset_requests", {})
+
+    response = _client().post(
+        "/api/password-reset/request-link",
+        json={"email": email},
+    )
+    assert response.status_code == 200
+    assert "Could not connect to the SMTP server" in caplog.text
+    assert not backend_app.password_reset_tokens
+    assert not backend_app.password_reset_requests
 
 
 def test_split_is_deterministic_and_stratified(tmp_path):

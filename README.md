@@ -144,11 +144,56 @@ Feedback is stored in `backend/data/feedback.sqlite3`.
 
 ## Account data notice
 
-The tracked `users.json` currently contains a legacy plaintext password and a
-profile image. Treat the password as exposed and rotate it. New registrations and
-password resets store PBKDF2 password hashes; a successful login upgrades a legacy
-password in place. Configure `FLASK_SECRET_KEY` outside the repository. Changing
-these files does not remove any credentials already present in Git history.
+The tracked `users.json` contains account data and profile images; protect it as
+private data. New registrations and password resets store PBKDF2 password hashes;
+a successful login upgrades any legacy plaintext password in place. Configure
+`FLASK_SECRET_KEY` outside the repository. Changing these files does not remove
+any credentials already present in Git history.
+
+## Email password recovery
+
+The login page's **Forgot Password?** link opens the email recovery page. The
+backend emails a single-use, random reset link that expires after 15 minutes.
+Reset links can be re-requested after a 60-second cooldown. The new password is
+stored as the same PBKDF2 hash used for registration. No database migration is
+needed; token digests and expiry timestamps are held in the backend process.
+
+For Gmail, enable 2-Step Verification on the sending Google account and create an
+App Password. Do not use the account's normal Google password. Copy the example
+environment file and enter the App Password and sender address:
+
+```powershell
+Copy-Item .env.example backend\.env
+notepad backend\.env
+```
+
+Set `SMTP_USERNAME` and `SMTP_FROM` to the Gmail sender address, `SMTP_PASSWORD`
+to the 16-character Google App Password (spaces are optional), and
+`SMTP_SERVER=smtp.gmail.com` with `SMTP_PORT=587`. Set `APP_BASE_URL` to the
+public origin used to open the app (keep `http://localhost:5000` for local
+development). Set `FLASK_SECRET_KEY` to a long, random secret and keep
+`backend\.env` private; it is ignored by Git. For example:
+
+```powershell
+py -c "import secrets; print(secrets.token_hex(32))"
+```
+
+Copy the printed value into `backend\.env` as `FLASK_SECRET_KEY`. Keep
+`FLASK_COOKIE_SECURE=0` for local HTTP development; set it to `1` when serving the
+site over HTTPS. The app loads `backend\.env` at startup. Install the added dependency
+alongside the project requirements and start the backend:
+
+```powershell
+.\.venv\Scripts\python.exe -m pip install -r requirements.txt
+.\run-project.ps1
+```
+
+Open `http://localhost:5000` and request a reset using an address registered in
+`users.json`. Open the link delivered to that inbox to choose a new password.
+Email delivery requires valid SMTP credentials and network access to Gmail.
+Reset-token state is held in the running Flask process, so use one application
+process for local development; a multi-worker deployment should use shared
+server-side storage for reset state.
 
 ## Tests
 
